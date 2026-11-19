@@ -3,6 +3,8 @@ extends Node2D
 const LootFilter = preload("LootFilter.gd")
 const EnemySkeleton = preload("EnemySkeleton.gd")
 const EspProfiles = preload("EspProfiles.gd")
+const PersonRadar = preload("PersonRadar.gd")
+const LootClusters = preload("LootClusters.gd")
 
 enum Kind { AI, PICKUP, CONTAINER, TRADER, CAT, GATHERING_NOMAD }
 
@@ -25,6 +27,7 @@ const LEGENDARY_COLOR := Color("f2a0ff")
 const LABEL_BACKGROUND := Color(0.03, 0.06, 0.07, 0.90)
 const MAX_MARKERS := 56
 const MAX_CANDIDATES := 96
+const MAX_RADAR_TARGETS := 64
 const SCAN_INTERVAL := 0.10
 const RARITY_LABELS := {
 	LootFilter.Rarity.COMMON: "Gewöhnlich",
@@ -41,6 +44,7 @@ var _options: Dictionary[StringName, bool] = {}
 var _targets: Dictionary[int, Dictionary] = {}
 var _skeleton_links: Dictionary[int, PackedInt32Array] = {}
 var _candidates: Array[Dictionary] = []
+var _radar_targets: Array[Dictionary] = []
 var _map: Node
 var _quest_refresh := 0.0
 var _scan_delay := 0.0
@@ -66,6 +70,7 @@ func set_option(id: StringName, enabled: bool) -> void:
 		_targets.clear()
 		_skeleton_links.clear()
 		_candidates.clear()
+		_radar_targets.clear()
 		_map = null
 	set_process(active)
 	invalidate_targets()
@@ -87,7 +92,7 @@ func invalidate_targets() -> void:
 	_scan_delay = 0.0
 
 func _active() -> bool:
-	return _options.get(&"enemy_esp", false) or _options.get(&"trader_esp", false) or _options.get(&"npc_esp", false) or _loot_active()
+	return _options.get(&"radar", false) or _options.get(&"enemy_esp", false) or _options.get(&"trader_esp", false) or _options.get(&"npc_esp", false) or _loot_active()
 
 func _loot_active() -> bool:
 	return _options.get(&"loot_esp", false) or _options.get(&"container_esp", false)
@@ -109,7 +114,8 @@ func _process(delta: float) -> void:
 			_scan_targets(camera, get_viewport_rect().grow(96.0))
 		else:
 			_candidates.clear()
-	if had_candidates or not _candidates.is_empty():
+			_radar_targets.clear()
+	if had_candidates or not _candidates.is_empty() or _options.get(&"radar", false):
 		queue_redraw()
 
 func _refresh_map() -> void:
@@ -122,6 +128,7 @@ func _refresh_map() -> void:
 	_targets.clear()
 	_skeleton_links.clear()
 	_candidates.clear()
+	_radar_targets.clear()
 	_quest_refresh = 0.0
 	if _map:
 		for candidate in _map.find_children("*", "Node3D", true, false):
@@ -149,21 +156,26 @@ func _draw() -> void:
 		return
 	var screen := get_viewport_rect()
 	var markers := _collect_markers(camera, screen.grow(-10.0))
+	var labels := LootClusters.labels(markers, screen.get_center()) if _options.get(&"loot_clusters", false) else markers
 	var line_start := Vector2(screen.get_center().x, screen.end.y - 14.0)
-	for marker in markers:
+	for marker in labels:
 		if _options.get(&"enemy_lines" if marker.actor else &"loot_lines", false):
 			var color: Color = marker.color
 			color.a = 0.56
 			draw_line(line_start, marker.p, color, 1.25, true)
 		if marker.kind == Kind.AI and _options.get(&"enemy_skeleton", false):
 			_draw_skeleton(camera, marker.target, marker.color, marker.distance)
-	_draw_labels(markers)
+	_draw_labels(labels)
 	if _options.get(&"loot_overview", false):
 		_draw_loot_overview(markers, screen)
+	if _options.get(&"radar", false):
+		PersonRadar.draw(self, camera, screen, enemy_distance, _radar_targets)
 
 func _scan_targets(camera: Camera3D, screen: Rect2) -> void:
 	_candidates.clear()
+	_radar_targets.clear()
 	var position := camera.global_position
+	var radar_enabled: bool = _options.get(&"radar", false)
 	var npc_enabled: bool = _options.get(&"npc_esp", false)
 	var ai_enabled: bool = _options.get(&"enemy_esp", false) or npc_enabled
 	var enabled: Array[bool] = [ai_enabled, _options.get(&"loot_esp", false), _options.get(&"container_esp", false),
@@ -171,26 +183,25 @@ func _scan_targets(camera: Camera3D, screen: Rect2) -> void:
 	for id in _targets:
 		var entry: Dictionary = _targets[id]
 		var kind: Kind = entry.kind
-		if not enabled[kind]:
+		var actor := kind != Kind.PICKUP and kind != Kind.CONTAINER
+		if not enabled[kind] and not (actor and radar_enabled):
 			continue
 		var target: Node3D = entry.target
 		if not is_instance_valid(target) or target.is_queued_for_deletion() or not target.is_visible_in_tree():
 			continue
-		var actor := kind != Kind.PICKUP and kind != Kind.CONTAINER
 		var origin := target.global_position
 		var limit := enemy_distance if actor else loot_distance
 		var distance_squared := position.distance_squared_to(origin)
 		if distance_squared > limit * limit:
 			continue
 		origin.y += MARKER_HEIGHTS[kind]
-		if camera.is_position_behind(origin):
-			continue
-		var point := camera.unproject_position(origin)
-		if not screen.has_point(point):
+		var point := Vector2.INF if camera.is_position_behind(origin) else camera.unproject_position(origin)
+		var visible_on_screen := screen.has_point(point)
+		if not visible_on_screen and not (actor and radar_enabled):
 			continue
 		var info: Dictionary = {}
 		match kind:
-			Kind.AI: info = _ai_info(target)
+			Kind.AI: info = _ai_info(target, radar_enabled)
 			Kind.PICKUP: info = _pickup_info(target)
 			Kind.CONTAINER: info = _container_info(target)
 			Kind.TRADER: info = _trader_info(target)
@@ -201,8 +212,15 @@ func _scan_targets(camera: Camera3D, screen: Rect2) -> void:
 					info = {"text": "Katze", "color": NPC_COLOR}
 		if info.is_empty():
 			continue
+		if actor and radar_enabled:
+			_radar_targets.append({"target": target, "color": info.color, "distance_squared": distance_squared})
+		if not visible_on_screen or not enabled[kind] or not info.get("world_marker", true):
+			continue
 		info.merge({"p": point, "distance": sqrt(distance_squared), "actor": actor, "kind": kind, "target": target})
 		_candidates.append(info)
+	if _radar_targets.size() > MAX_RADAR_TARGETS:
+		_radar_targets.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.distance_squared < b.distance_squared)
+		_radar_targets.resize(MAX_RADAR_TARGETS)
 	_candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if a.get("matched", false) != b.get("matched", false):
 			return a.get("matched", false)
@@ -240,19 +258,23 @@ func _collect_markers(camera: Camera3D, screen: Rect2) -> Array[Dictionary]:
 				break
 	return markers
 
-func _ai_info(target: Node3D) -> Dictionary:
+func _ai_info(target: Node3D, for_radar: bool) -> Dictionary:
 	if target.get(&"dead") or not target.get(&"active"):
 		return {}
 	var variant: Resource = target.get(&"variant")
 	if variant == null:
 		return {}
 	if variant.get(&"faction") == 0:
-		if not _options.get(&"npc_esp", false):
+		var show_nomad: bool = _options.get(&"npc_esp", false)
+		if not show_nomad and not for_radar:
 			return {}
-		return _nomad_info(target)
-	if not _options.get(&"enemy_esp", false):
+		var info := _nomad_info(target)
+		info["world_marker"] = show_nomad
+		return info
+	var show_enemy: bool = _options.get(&"enemy_esp", false)
+	if not show_enemy and not for_radar:
 		return {}
-	return {"text": str(variant.get(&"name")), "color": _marker_colors[&"enemy"]}
+	return {"text": str(variant.get(&"name")), "color": _marker_colors[&"enemy"], "world_marker": show_enemy}
 
 func _nomad_info(target: Node3D) -> Dictionary:
 	var nickname := str(target.get(&"nickname")).strip_edges()

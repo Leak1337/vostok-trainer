@@ -3,6 +3,7 @@ extends Node
 const Menu = preload("Menu.gd")
 const Esp = preload("Esp.gd")
 const NightVision = preload("NightVision.gd")
+const WorldControl = preload("WorldControl.gd")
 const GAME_DATA_PATH := "res://Resources/GameData.tres"
 
 var _lib
@@ -10,12 +11,14 @@ var _data: Resource
 var _menu: Menu
 var _esp: Esp
 var _night_vision: NightVision
+var _world: WorldControl
 var _settings: Dictionary[StringName, bool] = {}
 var _previous_pause := false
 var _previous_mouse := Input.MOUSE_MODE_VISIBLE
 var _closing_with_escape := false
 var _ammo_before := -1
 var _feeding_round := false
+var _condition_before: Variant
 
 
 func _ready() -> void:
@@ -47,11 +50,19 @@ func _ready() -> void:
 	_menu.marker_color_changed.connect(_esp.set_marker_color)
 	_night_vision = NightVision.new()
 	add_child(_night_vision)
+	_world = WorldControl.new()
+	add_child(_world)
+	_menu.time_requested.connect(_world.set_time)
+	_menu.weather_requested.connect(_world.set_weather)
 	_menu.restore_preferences()
 
 	_lib.hook("character-_physics_process-post", _update_vitals)
 	_lib.hook("weaponrig-fireevent-pre", _before_shot)
 	_lib.hook("weaponrig-fireevent-post", _after_shot)
+	if _lib.hook("weaponrig-malfunction", _block_malfunction) < 0:
+		_menu.disable_option(&"no_jam", "Ein anderer Mod belegt den Ladehemmungs-Hook.")
+	else:
+		_lib.hook("weaponrig-fireinput-pre", _clear_jam)
 	var damage_hooks := [
 		_lib.hook("character-weapondamage", _block_damage_two_args),
 		_lib.hook("character-explosiondamage", _block_damage),
@@ -80,6 +91,7 @@ func _input(event: InputEvent) -> void:
 				_previous_mouse = Input.mouse_mode
 				get_tree().paused = true
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+				_menu.update_world(_world.simulation() if _world.available() else null)
 				_menu.open()
 	elif key.keycode == KEY_ESCAPE and (_menu.visible or _closing_with_escape):
 		get_viewport().set_input_as_handled()
@@ -103,7 +115,9 @@ func _set_option(id: StringName, enabled: bool) -> void:
 	match id:
 		&"night_vision":
 			_night_vision.set_enabled(enabled)
-		&"stamina", &"ammo", &"godmode", &"needs":
+		&"freeze_clock":
+			_world.set_clock_frozen(enabled)
+		&"stamina", &"ammo", &"godmode", &"needs", &"no_jam", &"no_wear":
 			pass
 		_:
 			_esp.set_option(id, enabled)
@@ -151,10 +165,17 @@ func _block_damage_two_args(_damage, _penetration) -> void:
 func _before_shot() -> void:
 	_ammo_before = -1
 	_feeding_round = false
-	if not _settings.get(&"ammo", false) or _data.get(&"isDead"):
+	_condition_before = null
+	var infinite_ammo: bool = _settings.get(&"ammo", false)
+	var preserve_condition: bool = _settings.get(&"no_wear", false)
+	if (not infinite_ammo and not preserve_condition) or _data.get(&"isDead"):
 		return
 	var weapon = _lib._caller
 	if not weapon.slotData or not weapon.slotData.chamber or weapon.fireTimer < weapon.fireRate:
+		return
+	if preserve_condition:
+		_condition_before = weapon.slotData.condition
+	if not infinite_ammo:
 		return
 	_ammo_before = weapon.slotData.amount
 	var action: String = weapon.data.weaponAction
@@ -165,10 +186,15 @@ func _before_shot() -> void:
 
 
 func _after_shot() -> void:
-	if _ammo_before < 0:
+	if _ammo_before < 0 and _condition_before == null:
 		return
 	var weapon = _lib._caller
 	var slot = weapon.slotData
+	if _condition_before != null:
+		slot.condition = _condition_before
+		_condition_before = null
+	if _ammo_before < 0:
+		return
 	var fired: bool = weapon.fireTimer == 0.0 and slot.state != "Jammed"
 	if _feeding_round or not fired:
 		slot.amount = _ammo_before
@@ -184,3 +210,16 @@ func _after_shot() -> void:
 		weapon.hammerLocked = weapon.data.hammerLock
 	_ammo_before = -1
 	weapon.UpdateBullets()
+
+
+func _clear_jam() -> void:
+	if _settings.get(&"no_jam", false):
+		var slot = _lib._caller.slotData
+		if slot and slot.state == "Jammed":
+			slot.state = ""
+
+
+func _block_malfunction() -> bool:
+	if _settings.get(&"no_jam", false):
+		_lib.skip_super()
+	return false

@@ -9,7 +9,7 @@ const BUILT_INS := {
 }
 const OPTIONS := [
 	&"enemy_skeleton", &"enemy_lines", &"hide_enemy_distance", &"loot_overview",
-	&"loot_lines", &"show_empty", &"rare_only", &"hide_loot_distance", &"search_only",
+	&"loot_lines", &"loot_clusters", &"show_empty", &"rare_only", &"hide_loot_distance", &"search_only",
 ]
 const DEFAULT_COLORS := {
 	&"enemy": Color("ff8176"), &"loot": Color("80ebc8"), &"match": Color("52e3ef"),

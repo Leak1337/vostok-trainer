@@ -5,10 +5,13 @@ signal distance_changed(category: StringName, meters: float)
 signal loot_category_changed(category: StringName, enabled: bool)
 signal search_changed(query: String, watchlist: String, matches_only: bool)
 signal marker_color_changed(category: StringName, color: Color)
+signal time_requested(minutes: int)
+signal weather_requested(weather: String)
 signal close_requested
 
 const LootFilter = preload("LootFilter.gd")
 const EspProfiles = preload("EspProfiles.gd")
+const WorldControl = preload("WorldControl.gd")
 const DEFAULT_DISTANCE := 150.0
 
 var _screen: Control
@@ -26,6 +29,9 @@ var _profiles := EspProfiles.new()
 var _save_timer: Timer
 var _restoring := false
 var _dirty := false
+var _world_time: HSlider
+var _world_weather: OptionButton
+var _world_actions: Array[BaseButton] = []
 
 
 func _ready() -> void:
@@ -74,6 +80,8 @@ func _ready() -> void:
 	var player := _make_tab(tabs, "Spieler")
 	_add_switch(player, &"stamina", "Unbegrenzte Ausdauer")
 	_add_switch(player, &"ammo", "Unbegrenzte Munition", "Die Waffe muss zuerst geladen sein.")
+	_add_switch(player, &"no_wear", "Kein Waffenverschleiß", "Erhält den aktuellen Zustand beim Schießen.")
+	_add_switch(player, &"no_jam", "Keine Ladehemmungen", "Verhindert neue Ladehemmungen und löst bestehende beim Einsatz der Waffe.")
 	_add_switch(player, &"godmode", "Godmode", "Schützt vor Schaden und hält Gesundheit und Sauerstoff voll.")
 	_add_switch(player, &"needs", "Energie und Flüssigkeit auffüllen")
 	_add_switch(player, &"night_vision", "Nachtsicht", "Hellt dunkle Bildbereiche auf und färbt das Bild grün.")
@@ -82,6 +90,7 @@ func _ready() -> void:
 	_add_switch(enemy, &"enemy_esp", "Gegner anzeigen")
 	_add_switch(enemy, &"trader_esp", "Händler anzeigen")
 	_add_switch(enemy, &"npc_esp", "Andere NPCs anzeigen", "Markiert aktive Nomaden und die Katze.")
+	_add_switch(enemy, &"radar", "Radar anzeigen", "Zeigt Gegner, Händler und NPCs rund um dich. Nutzt die Personen-ESP-Reichweite.")
 	_add_switch(enemy, &"enemy_skeleton", "Skelett anzeigen", "Zeichnet die aktuellen Knochenpositionen der KI.")
 	_add_switch(enemy, &"enemy_lines", "Linien zu Personen und NPCs")
 	_add_switch(enemy, &"hide_enemy_distance", "Entfernung ausblenden")
@@ -91,6 +100,7 @@ func _ready() -> void:
 	_add_switch(loot, &"loot_esp", "Lose Gegenstände anzeigen")
 	_add_switch(loot, &"container_esp", "Behälter und Lager anzeigen", "Zeigt den erzeugten Inhalt auch vor dem Öffnen.")
 	_add_switch(loot, &"loot_overview", "Loot in Blickrichtung auflisten", "Zeigt Ziele nahe der Bildschirmmitte gesammelt an.")
+	_add_switch(loot, &"loot_clusters", "Nahe Loot-Marker bündeln", "Zeigt einzelne Ziele, wenn du die Gruppe anvisierst.")
 	_add_switch(loot, &"loot_lines", "Linien zu Loot und Behältern")
 	_add_switch(loot, &"show_empty", "Leere Behälter anzeigen")
 	_add_switch(loot, &"rare_only", "Nur seltenen und legendären Loot anzeigen")
@@ -99,6 +109,7 @@ func _ready() -> void:
 	_add_loot_categories(_make_tab(tabs, "Loot-Filter"))
 	_add_search(_make_tab(tabs, "Item-Suche"))
 	_add_profiles(_make_tab(tabs, "Profile"))
+	_add_world(_make_tab(tabs, "Welt"))
 	content.add_child(HSeparator.new())
 
 	var actions := HBoxContainer.new()
@@ -310,6 +321,76 @@ func _add_profiles(parent: VBoxContainer) -> void:
 	_add_color_picker(parent, &"enemy", "Gegnerfarbe")
 	_add_color_picker(parent, &"loot", "Farbe für gewöhnlichen Loot")
 	_add_color_picker(parent, &"match", "Farbe für Suchtreffer")
+
+func _add_world(parent: VBoxContainer) -> void:
+	var time_label := Label.new()
+	time_label.text = "Uhrzeit"
+	parent.add_child(time_label)
+	var time_row := HBoxContainer.new()
+	time_row.add_theme_constant_override(&"separation", 10)
+	parent.add_child(time_row)
+	_world_time = HSlider.new()
+	_world_time.name = "WorldTime"
+	_world_time.max_value = 1435.0
+	_world_time.step = 5.0
+	_world_time.value = 720.0
+	_world_time.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_world_time.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	time_row.add_child(_world_time)
+	var time_readout := Label.new()
+	time_readout.text = "12:00"
+	time_readout.custom_minimum_size.x = 55
+	_world_time.value_changed.connect(func(value: float) -> void:
+		time_readout.text = "%02d:%02d" % [floori(value / 60.0), int(value) % 60]
+	)
+	time_row.add_child(time_readout)
+	var apply_time := Button.new()
+	apply_time.name = "ApplyTime"
+	apply_time.text = "Zeit setzen"
+	apply_time.disabled = true
+	apply_time.pressed.connect(func() -> void: time_requested.emit(int(_world_time.value)))
+	time_row.add_child(apply_time)
+	_world_actions.append(apply_time)
+	_add_switch(parent, &"freeze_clock", "Uhr anhalten", "Stoppt den normalen Zeitlauf. Schlaf und Reisen können Zeit überspringen.")
+	_world_actions.append(_switches[&"freeze_clock"])
+	_switches[&"freeze_clock"].disabled = true
+	parent.add_child(HSeparator.new())
+	var weather_label := Label.new()
+	weather_label.text = "Wetter"
+	parent.add_child(weather_label)
+	var weather_row := HBoxContainer.new()
+	parent.add_child(weather_row)
+	_world_weather = OptionButton.new()
+	_world_weather.name = "WorldWeather"
+	_world_weather.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for weather in WorldControl.WEATHER:
+		_world_weather.add_item(WorldControl.WEATHER[weather])
+		_world_weather.set_item_metadata(_world_weather.item_count - 1, weather)
+	weather_row.add_child(_world_weather)
+	var apply_weather := Button.new()
+	apply_weather.name = "ApplyWeather"
+	apply_weather.text = "Wetter setzen"
+	apply_weather.disabled = true
+	apply_weather.pressed.connect(func() -> void:
+		weather_requested.emit(_world_weather.get_item_metadata(_world_weather.selected))
+	)
+	weather_row.add_child(apply_weather)
+	_world_actions.append(apply_weather)
+	var hint := Label.new()
+	hint.text = "In einer geladenen Karte verfügbar. Wetterwechsel wirken draußen."
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parent.add_child(hint)
+
+func update_world(simulation: Node) -> void:
+	for action in _world_actions:
+		action.disabled = simulation == null
+	if simulation:
+		_world_time.value = WorldControl.display_minutes(float(simulation.get(&"time")))
+		var weather: String = simulation.get(&"weather")
+		for index in _world_weather.item_count:
+			if _world_weather.get_item_metadata(index) == weather:
+				_world_weather.select(index)
+				break
 
 func _add_color_picker(parent: VBoxContainer, id: StringName, text: String) -> void:
 	var row := HBoxContainer.new()
