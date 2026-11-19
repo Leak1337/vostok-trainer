@@ -14,8 +14,16 @@ const ENEMY_COLOR := Color("ff8176")
 const LOOT_COLOR := Color("80ebc8")
 const CONTAINER_COLOR := Color("9bd5ff")
 const QUEST_COLOR := Color("ffda70")
+const WEAPON_COLOR := Color("ffac72")
+const RARE_COLOR := Color("86beff")
+const LEGENDARY_COLOR := Color("f2a0ff")
 const LABEL_BACKGROUND := Color(0.03, 0.06, 0.07, 0.90)
 const MAX_MARKERS := 56
+const RARITY_LABELS := {
+	LootFilter.Rarity.COMMON: "Gewöhnlich",
+	LootFilter.Rarity.RARE: "Selten",
+	LootFilter.Rarity.LEGENDARY: "Legendär",
+}
 
 var enemy_distance: float
 var loot_distance: float
@@ -112,7 +120,7 @@ func _draw() -> void:
 			color.a = 0.56
 			draw_line(line_start, marker.p, color, 1.25, true)
 		if enemy and _options.get(&"enemy_skeleton", false):
-			_draw_skeleton(camera, marker.target, marker.color)
+			_draw_skeleton(camera, marker.target, marker.color, marker.distance)
 	_draw_labels(markers)
 	if _options.get(&"loot_overview", false):
 		_draw_loot_overview(markers, screen)
@@ -166,11 +174,7 @@ func _pickup_info(target: Node3D) -> Dictionary:
 	var collision := target.get(&"collision") as CollisionShape3D
 	if collision == null or collision.disabled:
 		return {}
-	var item := _item_info(target.get(&"slotData"))
-	if item.is_empty():
-		return {}
-	item.color = QUEST_COLOR if item.quest else LOOT_COLOR
-	return item
+	return _item_info(target.get(&"slotData"))
 
 func _container_info(container: Node3D) -> Dictionary:
 	if not _options.get(&"container_esp", false) or container.process_mode == Node.PROCESS_MODE_DISABLED:
@@ -184,16 +188,16 @@ func _container_info(container: Node3D) -> Dictionary:
 				break
 			parent = parent.get_parent()
 	var slots: Array = container.get(&"storage") if container.get(&"storaged") else container.get(&"loot")
-	var details: Array[String] = []
-	var quests: Array[String] = []
+	var details: Array[Dictionary] = []
+	var quests: Array[Dictionary] = []
 	for slot in slots:
 		var item := _item_info(slot)
 		if item.is_empty():
 			continue
 		if item.quest:
-			quests.append(item.text)
+			quests.append(item)
 		else:
-			details.append(item.text)
+			details.append(item)
 	if details.is_empty() and quests.is_empty() and (not slots.is_empty() or not _options.get(&"show_empty", false)):
 		return {}
 	var title := str(container.get(&"containerName")).strip_edges()
@@ -205,8 +209,9 @@ func _container_info(container: Node3D) -> Dictionary:
 		title += " · leer"
 	else:
 		title += " · %d" % (details.size() + quests.size())
+	var has_quest := not quests.is_empty()
+	details.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.priority > b.priority)
 	quests.append_array(details)
-	var has_quest := not quests.is_empty() and quests[0].begins_with("[Quest] ")
 	return {"text": title, "color": QUEST_COLOR if has_quest else CONTAINER_COLOR, "quest": has_quest, "details": quests}
 
 func _item_info(slot: Resource) -> Dictionary:
@@ -222,9 +227,25 @@ func _item_info(slot: Resource) -> Dictionary:
 	var title := ("[Quest] " if quest else "") + str(item.get(&"name"))
 	if item.get(&"showAmount") and int(slot.get(&"amount")) > 1:
 		title += " ×%d" % int(slot.get(&"amount"))
-	return {"text": title, "quest": quest}
+	var rarity = item.get(&"rarity")
+	title += " · %s" % RARITY_LABELS.get(rarity, "Ohne Seltenheit")
+	var color := LOOT_COLOR
+	var priority := 0
+	if quest:
+		color = QUEST_COLOR
+		priority = 4
+	elif rarity == LootFilter.Rarity.LEGENDARY:
+		color = LEGENDARY_COLOR
+		priority = 3
+	elif rarity == LootFilter.Rarity.RARE:
+		color = RARE_COLOR
+		priority = 2
+	elif category == &"weapons":
+		color = WEAPON_COLOR
+		priority = 1
+	return {"text": title, "quest": quest, "color": color, "priority": priority}
 
-func _draw_skeleton(camera: Camera3D, target: Node3D, color: Color) -> void:
+func _draw_skeleton(camera: Camera3D, target: Node3D, color: Color, distance: float) -> void:
 	var skeleton := target.get(&"skeleton") as Skeleton3D
 	if not is_instance_valid(skeleton):
 		return
@@ -233,28 +254,27 @@ func _draw_skeleton(camera: Camera3D, target: Node3D, color: Color) -> void:
 		_skeleton_links[id] = EnemySkeleton.build_links(skeleton)
 	var segments := EnemySkeleton.project_links(skeleton, _skeleton_links[id], camera)
 	if not segments.is_empty():
-		draw_multiline(segments, Color(0.02, 0.03, 0.04, 0.90), 3.5, true)
-		draw_multiline(segments, color, 1.6, true)
+		var width := EnemySkeleton.line_width(distance)
+		if distance < 32.0:
+			draw_multiline(segments, Color(0.02, 0.03, 0.04, 0.68), width + 0.85, true)
+		draw_multiline(segments, color, width, true)
 
 func _title(marker: Dictionary) -> String:
 	var hide_distance := &"hide_enemy_distance" if marker.kind == Kind.ENEMY else &"hide_loot_distance"
 	return marker.text if _options.get(hide_distance, false) else "%s · %d m" % [marker.text, roundi(marker.distance)]
-
-func _summary(details: Array, limit: int) -> String:
-	var summary := ", ".join(details.slice(0, limit))
-	if details.size() > limit:
-		summary += " +%d" % (details.size() - limit)
-	return summary
 
 func _draw_labels(markers: Array[Dictionary]) -> void:
 	var font := ThemeDB.fallback_font
 	var occupied: Array[Rect2] = []
 	for marker in markers:
 		var text := _title(marker)
-		var detail := _summary(marker.get("details", []), 2)
-		var width := maxf(font.get_string_size(text, 0, -1, 15).x, font.get_string_size(detail, 0, -1, 13).x)
+		var contents: Array = marker.get("details", [])
+		var preview := contents.slice(0, 2)
+		var width := font.get_string_size(text, 0, -1, 15).x
+		for item: Dictionary in preview:
+			width = maxf(width, font.get_string_size(item.text, 0, -1, 13).x)
 		width = minf(width, 360.0)
-		var height := 22.0 if detail.is_empty() else 39.0
+		var height := 22.0 + 17.0 * preview.size()
 		var point: Vector2 = marker.p
 		var box := Rect2(point.x - width * 0.5 - 5.0, point.y - height - 3.0, width + 10.0, height)
 		if occupied.any(func(other: Rect2) -> bool: return other.intersects(box)):
@@ -263,8 +283,10 @@ func _draw_labels(markers: Array[Dictionary]) -> void:
 		draw_rect(box, LABEL_BACKGROUND)
 		draw_circle(point, 3.0, marker.color)
 		draw_string(font, box.position + Vector2(5.0, 16.0), text, HORIZONTAL_ALIGNMENT_LEFT, width, 15, marker.color)
-		if not detail.is_empty():
-			draw_string(font, box.position + Vector2(5.0, 33.0), detail, HORIZONTAL_ALIGNMENT_LEFT, width, 13, marker.color)
+		for index in preview.size():
+			var item: Dictionary = preview[index]
+			var row := box.position + Vector2(5.0, 33.0 + index * 17.0)
+			draw_string(font, row, item.text, HORIZONTAL_ALIGNMENT_LEFT, width, 13, item.color)
 
 func _draw_loot_overview(markers: Array[Dictionary], screen: Rect2) -> void:
 	var focus := screen.grow_individual(-screen.size.x * 0.32, -screen.size.y * 0.28, -screen.size.x * 0.32, -screen.size.y * 0.28)
@@ -294,8 +316,7 @@ func _draw_loot_overview(markers: Array[Dictionary], screen: Rect2) -> void:
 		row.y += 20.0
 		if index == 0:
 			for detail_index in detail_rows:
-				var detail: String = focused_details[detail_index]
-				var detail_color := QUEST_COLOR if detail.begins_with("[Quest] ") else LOOT_COLOR
-				draw_string(font, row + Vector2(8.0, 0.0), detail, HORIZONTAL_ALIGNMENT_LEFT, width - 32.0, 13, detail_color)
+				var detail: Dictionary = focused_details[detail_index]
+				draw_string(font, row + Vector2(8.0, 0.0), detail.text, HORIZONTAL_ALIGNMENT_LEFT, width - 32.0, 13, detail.color)
 				row.y += 17.0
 		row.y += 10.0

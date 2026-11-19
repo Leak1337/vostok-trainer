@@ -1,5 +1,7 @@
 extends RefCounted
 
+enum Rarity { COMMON, RARE, LEGENDARY, UNRATED }
+
 const CATEGORIES := {
 	&"weapons": "Waffen & Granaten",
 	&"ammo": "Munition & Magazine",
@@ -70,5 +72,4 @@ func category_of(item: Resource) -> StringName:
 func accepts(item: Resource, category: StringName) -> bool:
 	if _disabled.get(category, false):
 		return false
-	# Godot's game enum is Common, Rare, Legendary, Null.
-	return not rare_only or category == &"quest" or item.get(&"rarity") in [1, 2]
+	return not rare_only or category == &"quest" or item.get(&"rarity") in [Rarity.RARE, Rarity.LEGENDARY]

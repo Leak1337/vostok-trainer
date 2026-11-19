@@ -1,6 +1,10 @@
 extends RefCounted
 
 
+static func line_width(distance: float) -> float:
+	return clampf(1.55 * sqrt(24.0 / maxf(distance, 24.0)), 0.38, 1.55)
+
+
 static func build_links(skeleton: Skeleton3D) -> PackedInt32Array:
 	var links := PackedInt32Array()
 	var body_bones: Dictionary[int, bool] = {}
