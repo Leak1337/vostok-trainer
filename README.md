@@ -1,8 +1,8 @@
-# Vostok Trainer 0.4.2
+# Vostok Trainer 0.5.0
 
 Ein In-Game-Trainer für den Einzelspieler von **Road to Vostok 0.2.3.1** mit Metro Mod Loader 3.5.x.
 
-**F6** öffnet das Trainer-Menü. Das Spiel pausiert, solange das Menü offen ist. **F6** oder **Esc** schließen es. Alle Trainer-Funktionen starten ausgeschaltet. Die Auswahl der Loot-Kategorien bleibt beim Ausschalten erhalten, bis du das Spiel beendest.
+**F6** öffnet das Trainer-Menü. Das Spiel pausiert, solange das Menü offen ist. **F6** oder **Esc** schließen es. Die Hauptschalter für ESP und Spielerfunktionen starten ausgeschaltet. ESP-Einstellungen und Merkliste werden automatisch gespeichert.
 
 ## Spieler
 
@@ -26,6 +26,18 @@ Ein In-Game-Trainer für den Einzelspieler von **Road to Vostok 0.2.3.1** mit Me
 - Linien, Entfernungsangaben und ein Seltenheitsfilter sind separat einstellbar. Die Loot-Reichweite ist unabhängig von der Personen-Reichweite und auf 10 bis 400 m einstellbar. Standard sind 150 m.
 
 Das ESP aktualisiert die Zielliste und Loot-Infos ungefähr zehnmal pro Sekunde. Die Bildschirmpositionen und Skelette sichtbarer Ziele werden pro Bild neu berechnet.
+
+## Item-Suche und Merkliste
+
+Aktiviere Bodenloot oder Behälter unter **Loot-ESP** und öffne **Item-Suche**. Die Suche findet Teile des Namens oder der internen Item-ID. In die Merkliste passen bis zu 24 Begriffe und insgesamt 512 Zeichen. Trenne Begriffe mit Kommas oder Zeilenumbrüchen.
+
+Suchtreffer sind mit **[Suche]** oder **[Merkliste]** gekennzeichnet. Behälter mit passenden Gegenständen tragen **[Treffer]**. Treffer erscheinen auch bei ausgefilterten Kategorien. Mit **Nur Suchtreffer und Merkliste anzeigen** blendest du übrigen Loot aus, solange mindestens ein Suchbegriff vorhanden ist.
+
+## ESP-Profile
+
+Unter **Profile** findest du die Vorlagen **Standard**, **Quest**, **Waffen** und **Alles**. Gib einen eigenen Namen ein und klicke auf **Speichern**, um die aktuellen Reichweiten, Loot-Kategorien, Anzeigeoptionen und Farben zu sichern. Unter demselben Namen kannst du das Profil aktualisieren.
+
+Suche, Merkliste und die letzten ESP-Einstellungen bleiben beim Spielneustart erhalten. Beim Profilwechsel bleiben die Suche und Merkliste bestehen. Die Hauptschalter für ESP und Spielerfunktionen werden separat bedient.
 
 ## Installieren oder aktualisieren
 

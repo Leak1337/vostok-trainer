@@ -35,12 +35,40 @@ const ITEM_TYPES := {
 }
 
 var rare_only := false
+var search_only := false
+var _query := ""
+var _watch_terms := PackedStringArray()
 var _disabled: Dictionary[StringName, bool] = {}
 var _quest_items: Dictionary[String, bool] = {}
 
 
 func set_category(category: StringName, enabled: bool) -> void:
 	_disabled[category] = not enabled
+
+
+func set_search(query: String, watchlist: String, matches_only: bool) -> void:
+	_query = query.strip_edges().to_lower()
+	_watch_terms.clear()
+	for entry in watchlist.left(512).replace("\n", ",").split(",", false):
+		var term := entry.strip_edges().to_lower()
+		if not term.is_empty() and not _watch_terms.has(term):
+			_watch_terms.append(term)
+			if _watch_terms.size() == 24:
+				break
+	search_only = matches_only and (not _query.is_empty() or not _watch_terms.is_empty())
+
+
+func match_item(item: Resource) -> StringName:
+	if _query.is_empty() and _watch_terms.is_empty():
+		return &""
+	var name := str(item.get(&"name")).to_lower()
+	var file := str(item.get(&"file")).to_lower()
+	for term in _watch_terms:
+		if name.contains(term) or file.contains(term):
+			return &"watch"
+	if not _query.is_empty() and (name.contains(_query) or file.contains(_query)):
+		return &"search"
+	return &""
 
 
 func set_task_notes(notes: Array) -> void:

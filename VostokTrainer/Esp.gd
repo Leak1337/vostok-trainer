@@ -2,6 +2,7 @@ extends Node2D
 
 const LootFilter = preload("LootFilter.gd")
 const EnemySkeleton = preload("EnemySkeleton.gd")
+const EspProfiles = preload("EspProfiles.gd")
 
 enum Kind { AI, PICKUP, CONTAINER, TRADER, CAT, GATHERING_NOMAD }
 
@@ -14,10 +15,8 @@ const SCRIPTS := {
 	"res://Scripts/NomadAnim": Kind.GATHERING_NOMAD,
 }
 const MARKER_HEIGHTS := [1.85, 0.18, 0.45, 1.75, 0.48, 1.4]
-const ENEMY_COLOR := Color("ff8176")
 const TRADER_COLOR := Color("6ce8f6")
 const NPC_COLOR := Color("b6ed92")
-const LOOT_COLOR := Color("80ebc8")
 const CONTAINER_COLOR := Color("9bd5ff")
 const QUEST_COLOR := Color("ffda70")
 const WEAPON_COLOR := Color("ffac72")
@@ -36,6 +35,7 @@ const RARITY_LABELS := {
 var enemy_distance: float
 var loot_distance: float
 var filter := LootFilter.new()
+var _marker_colors := EspProfiles.DEFAULT_COLORS.duplicate()
 
 var _options: Dictionary[StringName, bool] = {}
 var _targets: Dictionary[int, Dictionary] = {}
@@ -73,6 +73,14 @@ func set_option(id: StringName, enabled: bool) -> void:
 
 func set_loot_category(category: StringName, enabled: bool) -> void:
 	filter.set_category(category, enabled)
+	invalidate_targets()
+
+func set_search(query: String, watchlist: String, matches_only: bool) -> void:
+	filter.set_search(query, watchlist, matches_only)
+	invalidate_targets()
+
+func set_marker_color(category: StringName, color: Color) -> void:
+	_marker_colors[category] = color
 	invalidate_targets()
 
 func invalidate_targets() -> void:
@@ -196,6 +204,8 @@ func _scan_targets(camera: Camera3D, screen: Rect2) -> void:
 		info.merge({"p": point, "distance": sqrt(distance_squared), "actor": actor, "kind": kind, "target": target})
 		_candidates.append(info)
 	_candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if a.get("matched", false) != b.get("matched", false):
+			return a.get("matched", false)
 		if a.get("quest", false) != b.get("quest", false):
 			return a.get("quest", false)
 		return a.distance < b.distance
@@ -242,7 +252,7 @@ func _ai_info(target: Node3D) -> Dictionary:
 		return _nomad_info(target)
 	if not _options.get(&"enemy_esp", false):
 		return {}
-	return {"text": str(variant.get(&"name")), "color": ENEMY_COLOR}
+	return {"text": str(variant.get(&"name")), "color": _marker_colors[&"enemy"]}
 
 func _nomad_info(target: Node3D) -> Dictionary:
 	var nickname := str(target.get(&"nickname")).strip_edges()
@@ -284,7 +294,7 @@ func _container_info(container: Node3D) -> Dictionary:
 			quests.append(item)
 		else:
 			details.append(item)
-	if details.is_empty() and quests.is_empty() and (not slots.is_empty() or not _options.get(&"show_empty", false)):
+	if details.is_empty() and quests.is_empty() and (filter.search_only or not slots.is_empty() or not _options.get(&"show_empty", false)):
 		return {}
 	var title := str(container.get(&"containerName")).strip_edges()
 	if title.is_empty():
@@ -296,9 +306,14 @@ func _container_info(container: Node3D) -> Dictionary:
 	else:
 		title += " · %d" % (details.size() + quests.size())
 	var has_quest := not quests.is_empty()
+	quests.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.priority > b.priority)
 	details.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.priority > b.priority)
 	quests.append_array(details)
-	return {"text": title, "color": QUEST_COLOR if has_quest else CONTAINER_COLOR, "quest": has_quest, "details": quests}
+	var matched := quests.any(func(item: Dictionary) -> bool: return item.matched)
+	if matched:
+		title = "[Treffer] " + title
+	var color: Color = QUEST_COLOR if has_quest else _marker_colors[&"match"] if matched else CONTAINER_COLOR
+	return {"text": title, "color": color, "quest": has_quest, "matched": matched, "details": quests}
 
 func _item_info(slot: Resource) -> Dictionary:
 	if not slot:
@@ -307,18 +322,25 @@ func _item_info(slot: Resource) -> Dictionary:
 	if item == null:
 		return {}
 	var category := filter.category_of(item)
-	if not filter.accepts(item, category):
+	var match_kind := filter.match_item(item)
+	var matched := match_kind != &""
+	if not matched and (filter.search_only or not filter.accepts(item, category)):
 		return {}
 	var quest := category == &"quest"
 	var title := ("[Quest] " if quest else "") + str(item.get(&"name"))
+	if matched:
+		title = ("[Merkliste] " if match_kind == &"watch" else "[Suche] ") + title
 	if item.get(&"showAmount") and int(slot.get(&"amount")) > 1:
 		title += " ×%d" % int(slot.get(&"amount"))
 	var rarity = item.get(&"rarity")
 	title += " · %s" % RARITY_LABELS.get(rarity, "Ohne Seltenheit")
-	var color := LOOT_COLOR
+	var color: Color = _marker_colors[&"loot"]
 	var priority := 0
 	if quest:
 		color = QUEST_COLOR
+		priority = 5 if matched else 4
+	elif matched:
+		color = _marker_colors[&"match"]
 		priority = 4
 	elif rarity == LootFilter.Rarity.LEGENDARY:
 		color = LEGENDARY_COLOR
@@ -329,7 +351,7 @@ func _item_info(slot: Resource) -> Dictionary:
 	elif category == &"weapons":
 		color = WEAPON_COLOR
 		priority = 1
-	return {"text": title, "quest": quest, "color": color, "priority": priority}
+	return {"text": title, "quest": quest, "matched": matched, "color": color, "priority": priority}
 
 func _draw_skeleton(camera: Camera3D, target: Node3D, color: Color, distance: float) -> void:
 	var skeleton := target.get(&"skeleton") as Skeleton3D

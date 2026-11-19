@@ -43,8 +43,11 @@ func _ready() -> void:
 	overlay.add_child(_esp)
 	_menu.distance_changed.connect(_set_esp_distance)
 	_menu.loot_category_changed.connect(_esp.set_loot_category)
+	_menu.search_changed.connect(_esp.set_search)
+	_menu.marker_color_changed.connect(_esp.set_marker_color)
 	_night_vision = NightVision.new()
 	add_child(_night_vision)
+	_menu.restore_preferences()
 
 	_lib.hook("character-_physics_process-post", _update_vitals)
 	_lib.hook("weaponrig-fireevent-pre", _before_shot)
@@ -89,6 +92,7 @@ func _input(event: InputEvent) -> void:
 
 func _close_menu() -> void:
 	if _menu.visible:
+		_menu.flush_preferences()
 		_menu.hide()
 		get_tree().paused = _previous_pause
 		Input.mouse_mode = _previous_mouse
