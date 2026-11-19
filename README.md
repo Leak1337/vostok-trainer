@@ -1,4 +1,4 @@
-# Vostok Trainer 0.7.0
+# Vostok Trainer 0.8.0
 
 [Download the latest VostokTrainer.vmz](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [Deutsche Anleitung](./README.de.md)
 
@@ -25,6 +25,8 @@ Use the language selector at the top right to switch between **English** and **D
 - **Increased Carry Capacity** multiplies base carry capacity by five and keeps equipment bonuses.
 - **Heal Now** restores health and oxygen and treats injuries. It is available on a loaded map while your character is alive.
 - **Sprint Speed** increases sprint speed up to twice its normal value. Stamina use still applies.
+- **Jump Height** increases normal jump height up to about twice its usual value. Fall protection is a separate setting.
+- **Unlimited Oxygen** keeps oxygen full, including underwater, independently of God Mode.
 - **Keep Energy and Hydration Full** keeps both meters full.
 - **Night Vision** brightens dark areas and adds a green tint.
 
@@ -61,6 +63,10 @@ Your search, watchlist, and last ESP settings are restored when you restart the 
 ## World controls
 
 With a map loaded, use the **World** tab to set the time in five-minute increments or freeze the regular clock. Sleeping and traveling can still advance time. **Set Weather** includes Clear, Overcast, Rain, Storm, Fog, Windy, and Aurora. Weather changes appear outdoors, then normal weather simulation resumes. The next regular save can store the changed time and weather.
+
+## Item spawner
+
+With a map loaded, open **Item Spawner**. Search the catalog by name or internal ID, select an item, and add up to ten copies to your inventory per click. Items use the normal inventory grid. When space runs out, the trainer stops and reports how many copies were added. Ammo and consumables use their default quantity per copy. Magazines are added empty.
 
 ## Build from source
 

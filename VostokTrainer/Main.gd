@@ -6,6 +6,7 @@ const NightVision = preload("NightVision.gd")
 const WorldControl = preload("WorldControl.gd")
 const Locale = preload("Locale.gd")
 const PlayerAssist = preload("PlayerAssist.gd")
+const ItemSpawner = preload("ItemSpawner.gd")
 const GAME_DATA_PATH := "res://Resources/GameData.tres"
 
 var _lib
@@ -15,6 +16,7 @@ var _esp: Esp
 var _night_vision: NightVision
 var _world: WorldControl
 var _player: PlayerAssist
+var _spawner: ItemSpawner
 var _settings: Dictionary[StringName, bool] = {}
 var _previous_pause := false
 var _previous_mouse := Input.MOUSE_MODE_VISIBLE
@@ -23,7 +25,8 @@ var _ammo_before := -1
 var _feeding_round := false
 var _condition_before: Variant
 var _sprint_multiplier := 1.0
-var _sprint_before: Variant
+var _jump_height_multiplier := 1.0
+var _movement_before: Dictionary[StringName, float] = {}
 
 
 func _ready() -> void:
@@ -61,8 +64,14 @@ func _ready() -> void:
 	_player = PlayerAssist.new()
 	_player.game_data = _data
 	add_child(_player)
+	_spawner = ItemSpawner.new()
+	_spawner.game_data = _data
+	add_child(_spawner)
+	_menu.catalog_requested.connect(_load_item_catalog)
+	_menu.item_requested.connect(_grant_items)
 	_menu.heal_requested.connect(_player.heal)
 	_menu.sprint_changed.connect(_set_sprint_multiplier)
+	_menu.jump_changed.connect(_set_jump_height)
 	_menu.time_requested.connect(_world.set_time)
 	_menu.weather_requested.connect(_world.set_weather)
 	_menu.restore_preferences()
@@ -74,10 +83,16 @@ func _ready() -> void:
 		_menu.disable_option(&"no_jam", "Ein anderer Mod belegt den Ladehemmungs-Hook.")
 	else:
 		_lib.hook("weaponrig-fireinput-pre", _clear_jam)
-	var sprint_pre: int = _lib.hook("controller-movementstates-pre", _before_movement_states)
-	var sprint_post: int = _lib.hook("controller-movementstates-post", _after_movement_states)
+	var sprint_pre: int = _lib.hook("controller-movementstates-pre", _before_movement_boost.bind(&"sprintSpeed"))
+	var sprint_post: int = _lib.hook("controller-movementstates-post", _after_movement_boost.bind(&"sprintSpeed"))
 	if sprint_pre < 0 or sprint_post < 0:
-		_menu.disable_sprint()
+		_menu.disable_movement(&"sprint")
+	var jump_pre: int = _lib.hook("controller-jump-pre", _before_movement_boost.bind(&"jumpVelocity"))
+	var jump_post: int = _lib.hook("controller-jump-post", _after_movement_boost.bind(&"jumpVelocity"))
+	if jump_pre < 0 or jump_post < 0:
+		_menu.disable_movement(&"jump")
+	if _lib.hook("character-oxygen", _hold_oxygen) < 0:
+		_menu.disable_option(&"oxygen", "Ein anderer Mod belegt den Sauerstoff-Hook.")
 	var fall_hook: int = _lib.hook("character-falldamage", _block_fall_damage)
 	if fall_hook < 0:
 		_menu.disable_option(&"no_fall_damage", "Ein anderer Mod belegt den Sturzschaden-Hook.")
@@ -111,6 +126,7 @@ func _input(event: InputEvent) -> void:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 				_menu.update_world(_world.simulation() if _world.available() else null)
 				_menu.set_heal_available(_player.can_heal())
+				_menu.set_spawn_available(_spawner.available())
 				_menu.open()
 	elif key.keycode == KEY_ESCAPE and (_menu.visible or _closing_with_escape):
 		get_viewport().set_input_as_handled()
@@ -138,7 +154,7 @@ func _set_option(id: StringName, enabled: bool) -> void:
 			_world.set_clock_frozen(enabled)
 		&"carry_boost":
 			_player.set_carry_boost(enabled)
-		&"stamina", &"ammo", &"godmode", &"needs", &"no_jam", &"no_wear", &"no_fall_damage":
+		&"stamina", &"ammo", &"godmode", &"needs", &"no_jam", &"no_wear", &"no_fall_damage", &"oxygen":
 			pass
 		_:
 			_esp.set_option(id, enabled)
@@ -190,17 +206,33 @@ func _block_fall_damage(_distance: float) -> void:
 func _set_sprint_multiplier(multiplier: float) -> void:
 	_sprint_multiplier = multiplier
 
-func _before_movement_states(_delta: float) -> void:
-	if _sprint_multiplier > 1.0:
-		var controller: Node = _lib._caller
-		_sprint_before = controller.get(&"sprintSpeed")
-		if _sprint_before != null:
-			controller.set(&"sprintSpeed", float(_sprint_before) * _sprint_multiplier)
+func _set_jump_height(multiplier: float) -> void:
+	_jump_height_multiplier = multiplier
 
-func _after_movement_states(_delta: float) -> void:
-	if _sprint_before != null:
-		_lib._caller.set(&"sprintSpeed", _sprint_before)
-		_sprint_before = null
+func _before_movement_boost(_delta: float, property: StringName) -> void:
+	var multiplier := _sprint_multiplier if property == &"sprintSpeed" else sqrt(_jump_height_multiplier)
+	if multiplier > 1.0:
+		var controller: Node = _lib._caller
+		if property in controller:
+			var original := float(controller.get(property))
+			_movement_before[property] = original
+			controller.set(property, original * multiplier)
+
+func _after_movement_boost(_delta: float, property: StringName) -> void:
+	if _movement_before.has(property):
+		_lib._caller.set(property, _movement_before[property])
+		_movement_before.erase(property)
+
+func _hold_oxygen(_delta: float) -> void:
+	if _settings.get(&"oxygen", false) and _player.can_update_player():
+		_data.set(&"oxygen", 100.0)
+		_lib.skip_super()
+
+func _load_item_catalog() -> void:
+	_menu.set_item_catalog(_spawner.catalog())
+
+func _grant_items(file: String, count: int) -> void:
+	_menu.show_spawn_result(_spawner.add_items(file, count), count)
 
 
 func _before_shot() -> void:

@@ -1,4 +1,4 @@
-# Vostok Trainer 0.7.0
+# Vostok Trainer 0.8.0
 
 [Neueste VostokTrainer.vmz direkt herunterladen](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [English documentation](./README.md)
 
@@ -19,6 +19,8 @@ Oben rechts kannst du zwischen **Deutsch** und **English** wechseln. Die Auswahl
 - **Mehr Tragkraft** verfünffacht die Grundtragkraft und behält die Ausrüstungsboni bei.
 - **Sofort heilen** füllt Gesundheit und Sauerstoff auf und behandelt Verletzungen. Die Aktion ist in einer geladenen Karte mit lebendem Charakter verfügbar.
 - **Sprinttempo** erhöht die Sprintgeschwindigkeit bis auf das Doppelte. Der normale Ausdauerverbrauch bleibt aktiv.
+- **Sprunghöhe** erhöht die Höhe normaler Sprünge auf bis zu ungefähr das Doppelte. Sturzschaden lässt sich separat ausschalten.
+- **Unbegrenzter Sauerstoff** hält den Sauerstoff auch unter Wasser voll, unabhängig von Godmode.
 - **Energie und Flüssigkeit auffüllen** hält beide Werte voll.
 - **Nachtsicht** hellt dunkle Bildbereiche auf und färbt das Bild grün.
 
@@ -55,6 +57,10 @@ Suche, Merkliste und die letzten ESP-Einstellungen bleiben beim Spielneustart er
 ## Welt
 
 In einer geladenen Karte kannst du unter **Welt** die Uhrzeit in Fünf-Minuten-Schritten setzen oder den normalen Zeitlauf anhalten. Schlaf und Reisen nutzen weiterhin ihre eigenen Zeitsprünge. **Wetter setzen** bietet unter anderem Klar, Regen, Nebel und Sturm. Draußen wechselt das Spiel zu diesem Wetter, danach läuft die normale Wettersimulation weiter. Uhrzeit und Wetter können beim nächsten regulären Speichern in den Spielstand übernommen werden.
+
+## Item-Spawner
+
+Öffne in einer geladenen Karte den Tab **Item-Spawner**. Filtere den Katalog nach Name oder interner ID, wähle einen Gegenstand und lege bis zu zehn Kopien pro Klick ins Inventar. Das Spiel platziert die Gegenstände im Inventarraster. Wenn der Platz ausgeht, stoppt der Trainer und zeigt an, wie viele Kopien eingefügt wurden. Munition und Verbrauchsgegenstände verwenden ihre Standardmenge pro Kopie. Magazine kommen leer ins Inventar.
 
 ## Installieren oder aktualisieren
 
