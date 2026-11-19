@@ -63,11 +63,12 @@ func _ready() -> void:
 	_add_switch(player, &"needs", "Energie und Flüssigkeit auffüllen")
 	_add_switch(player, &"night_vision", "Nachtsicht", "Hellt dunkle Bildbereiche auf und färbt das Bild grün.")
 
-	var enemy := _make_tab(tabs, "Gegner-ESP")
+	var enemy := _make_tab(tabs, "Personen-ESP")
 	_add_switch(enemy, &"enemy_esp", "Gegner anzeigen")
+	_add_switch(enemy, &"trader_esp", "Händler anzeigen")
+	_add_switch(enemy, &"npc_esp", "Andere NPCs anzeigen", "Markiert aktive Nomaden und die Katze.")
 	_add_switch(enemy, &"enemy_skeleton", "Skelett anzeigen", "Zeichnet die aktuellen Knochenpositionen der KI.")
-	_add_switch(enemy, &"enemy_lines", "Linien zu Gegnern")
-	_add_switch(enemy, &"show_nomads", "Nomaden anzeigen")
+	_add_switch(enemy, &"enemy_lines", "Linien zu Personen und NPCs")
 	_add_switch(enemy, &"hide_enemy_distance", "Entfernung ausblenden")
 	_add_distance_slider(enemy, &"enemy")
 

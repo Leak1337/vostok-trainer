@@ -1,4 +1,4 @@
-# Vostok Trainer 0.4.1
+# Vostok Trainer 0.4.2
 
 Ein In-Game-Trainer für den Einzelspieler von **Road to Vostok 0.2.3.1** mit Metro Mod Loader 3.5.x.
 
@@ -12,9 +12,9 @@ Ein In-Game-Trainer für den Einzelspieler von **Road to Vostok 0.2.3.1** mit Me
 - **Energie und Flüssigkeit auffüllen** hält beide Werte voll.
 - **Nachtsicht** hellt dunkle Bildbereiche auf und färbt das Bild grün.
 
-## Gegner-ESP
+## Personen-ESP
 
-Aktiviere **Gegner anzeigen** und schalte **Skelett anzeigen** und **Linien zu Gegnern** nach Wunsch dazu. Das Skelett folgt den aktuellen Knochenpositionen. Seine Linien werden mit zunehmender Entfernung dünner. Nomaden lassen sich zusätzlich einschalten. Die Gegner-Reichweite ist von 10 bis 400 m einstellbar. Standard sind 150 m.
+**Gegner anzeigen**, **Händler anzeigen** und **Andere NPCs anzeigen** sind unabhängig schaltbar. Aktive Händler werden türkis markiert, aktive Nomaden und die Katze hellgrün. **Skelett anzeigen** folgt den aktuellen Knochenpositionen von Gegnern und umherziehenden Nomaden. Die Skelettlinien werden mit zunehmender Entfernung dünner. Linien zur Bildschirmmitte und Entfernungsangaben sind separat einstellbar. Die gemeinsame Personen-Reichweite ist von 10 bis 400 m einstellbar. Standard sind 150 m.
 
 ## Loot-ESP und Loot-Filter
 
@@ -23,7 +23,9 @@ Aktiviere **Gegner anzeigen** und schalte **Skelett anzeigen** und **Linien zu G
 - **Loot in Blickrichtung auflisten** sammelt Marker rund um die Bildschirmmitte. Richte den Blick auf ein Gebäude, um Loot im Sichtfeld zu sehen, und auf einen Behältermarker, um mehr von seinem Inhalt zu lesen. Die Übersicht kann auch Loot hinter dem Gebäude erfassen, wenn er in derselben Blickrichtung und Reichweite liegt.
 - **Loot-Filter** bietet eine Mehrfachauswahl für Waffen, Munition, Zubehör, Essen und Trinken, Medizin, Ausrüstung, Elektronik, Schlüssel, Quest-Gegenstände und Sonstiges. Die Filter gelten für Bodenloot und Behälterinhalte. Quest-Gegenstände sind gelb und mit **[Quest]** beschriftet. Für Händleraufgaben zählt, was auf deiner Aufgabenliste notiert ist.
 - Die Seltenheit steht am Gegenstandsnamen. Normale Waffen sind orange, seltene Gegenstände blau und legendäre violett. Bei Waffen mit höherer Seltenheit gilt die Seltenheitsfarbe. Quest-Gegenstände behalten ihre gelbe Markierung und zeigen ihre Seltenheit zusätzlich als Text.
-- Linien, Entfernungsangaben und ein Seltenheitsfilter sind separat einstellbar. Die Loot-Reichweite ist unabhängig von der Gegner-Reichweite und auf 10 bis 400 m einstellbar. Standard sind 150 m.
+- Linien, Entfernungsangaben und ein Seltenheitsfilter sind separat einstellbar. Die Loot-Reichweite ist unabhängig von der Personen-Reichweite und auf 10 bis 400 m einstellbar. Standard sind 150 m.
+
+Das ESP aktualisiert die Zielliste und Loot-Infos ungefähr zehnmal pro Sekunde. Die Bildschirmpositionen und Skelette sichtbarer Ziele werden pro Bild neu berechnet.
 
 ## Installieren oder aktualisieren
 

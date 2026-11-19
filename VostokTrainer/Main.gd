@@ -42,7 +42,7 @@ func _ready() -> void:
 	_esp.loot_distance = Menu.DEFAULT_DISTANCE
 	overlay.add_child(_esp)
 	_menu.distance_changed.connect(_set_esp_distance)
-	_menu.loot_category_changed.connect(_esp.filter.set_category)
+	_menu.loot_category_changed.connect(_esp.set_loot_category)
 	_night_vision = NightVision.new()
 	add_child(_night_vision)
 
@@ -110,6 +110,7 @@ func _set_esp_distance(category: StringName, meters: float) -> void:
 		_esp.enemy_distance = meters
 	else:
 		_esp.loot_distance = meters
+	_esp.invalidate_targets()
 
 
 func _update_vitals(_delta: float) -> void:
