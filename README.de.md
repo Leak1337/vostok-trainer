@@ -1,4 +1,4 @@
-# Vostok Trainer 0.8.0
+# Vostok Trainer 0.9.0
 
 [Neueste VostokTrainer.vmz direkt herunterladen](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [English documentation](./README.md)
 
@@ -61,6 +61,14 @@ In einer geladenen Karte kannst du unter **Welt** die Uhrzeit in Fünf-Minuten-S
 ## Item-Spawner
 
 Öffne in einer geladenen Karte den Tab **Item-Spawner**. Filtere den Katalog nach Name oder interner ID, wähle einen Gegenstand und lege bis zu zehn Kopien pro Klick ins Inventar. Das Spiel platziert die Gegenstände im Inventarraster. Wenn der Platz ausgeht, stoppt der Trainer und zeigt an, wie viele Kopien eingefügt wurden. Munition und Verbrauchsgegenstände verwenden ihre Standardmenge pro Kopie. Magazine kommen leer ins Inventar.
+
+## Teleport
+
+Öffne **F6 → Teleport**, um aktive Händler, Kartenübergänge und vorhandene Orientierungspunkte wie Brunnen, Feuerstellen, Funkgeräte oder Nomadenplätze zu sehen. Jedes Ziel zeigt seine Entfernung an.
+
+- **Zum Ziel** versetzt dich auf einen freien Bodenplatz in der Nähe und bleibt auf derselben Karte.
+- **Karte wechseln** benutzt den gewählten Kartenübergang direkt. Das Spiel übernimmt Ankunft, Reisezeit und die regulären Speicherregeln. Verschlossene Übergänge müssen wie gewohnt geöffnet werden.
+- **Letzte Position** erscheint nach einem lokalen Teleport. Sie bringt dich auf derselben Karte zum vorherigen Standort zurück, sofern dort ein Landeplatz gefunden wird.
 
 ## Installieren oder aktualisieren
 

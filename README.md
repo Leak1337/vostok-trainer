@@ -1,4 +1,4 @@
-# Vostok Trainer 0.8.0
+# Vostok Trainer 0.9.0
 
 [Download the latest VostokTrainer.vmz](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [Deutsche Anleitung](./README.de.md)
 
@@ -67,6 +67,14 @@ With a map loaded, use the **World** tab to set the time in five-minute incremen
 ## Item spawner
 
 With a map loaded, open **Item Spawner**. Search the catalog by name or internal ID, select an item, and add up to ten copies to your inventory per click. Items use the normal inventory grid. When space runs out, the trainer stops and reports how many copies were added. Ammo and consumables use their default quantity per copy. Magazines are added empty.
+
+## Teleport
+
+Open **F6 → Teleport** to see active traders, map exits, and points of interest such as wells, campfires, radios, and nomad camp spots. Each target shows its distance.
+
+- **Go to Target** places you on clear ground near the selected target on the same map.
+- **Change Map** uses the selected exit from your current location. The game handles arrival, travel time, and its usual save rules. Locked exits still need to be unlocked in the game.
+- **Last Position** appears after a local teleport. It returns you to your previous location on the same map if a landing spot is available.
 
 ## Build from source
 

@@ -7,6 +7,7 @@ const WorldControl = preload("WorldControl.gd")
 const Locale = preload("Locale.gd")
 const PlayerAssist = preload("PlayerAssist.gd")
 const ItemSpawner = preload("ItemSpawner.gd")
+const TravelControl = preload("TravelControl.gd")
 const GAME_DATA_PATH := "res://Resources/GameData.tres"
 
 var _lib
@@ -17,6 +18,7 @@ var _night_vision: NightVision
 var _world: WorldControl
 var _player: PlayerAssist
 var _spawner: ItemSpawner
+var _travel: TravelControl
 var _settings: Dictionary[StringName, bool] = {}
 var _previous_pause := false
 var _previous_mouse := Input.MOUSE_MODE_VISIBLE
@@ -67,6 +69,12 @@ func _ready() -> void:
 	_spawner = ItemSpawner.new()
 	_spawner.game_data = _data
 	add_child(_spawner)
+	_travel = TravelControl.new()
+	_travel.game_data = _data
+	add_child(_travel)
+	_travel.finished.connect(_travel_finished)
+	_menu.travel_targets_requested.connect(_load_travel_targets)
+	_menu.travel_requested.connect(_travel.request)
 	_menu.catalog_requested.connect(_load_item_catalog)
 	_menu.item_requested.connect(_grant_items)
 	_menu.heal_requested.connect(_player.heal)
@@ -127,6 +135,7 @@ func _input(event: InputEvent) -> void:
 				_menu.update_world(_world.simulation() if _world.available() else null)
 				_menu.set_heal_available(_player.can_heal())
 				_menu.set_spawn_available(_spawner.available())
+				_menu.refresh_travel_if_visible()
 				_menu.open()
 	elif key.keycode == KEY_ESCAPE and (_menu.visible or _closing_with_escape):
 		get_viewport().set_input_as_handled()
@@ -233,6 +242,14 @@ func _load_item_catalog() -> void:
 
 func _grant_items(file: String, count: int) -> void:
 	_menu.show_spawn_result(_spawner.add_items(file, count), count)
+
+func _load_travel_targets() -> void:
+	_menu.set_travel_targets(_travel.targets())
+
+func _travel_finished(result: String, moved: bool) -> void:
+	_menu.show_travel_result(result)
+	if moved:
+		_close_menu()
 
 
 func _before_shot() -> void:

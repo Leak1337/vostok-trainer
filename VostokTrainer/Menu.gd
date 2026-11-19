@@ -13,6 +13,8 @@ signal sprint_changed(multiplier: float)
 signal jump_changed(multiplier: float)
 signal catalog_requested
 signal item_requested(file: String, count: int)
+signal travel_targets_requested
+signal travel_requested(id: int, cross_map: bool)
 signal close_requested
 
 const LootFilter = preload("LootFilter.gd")
@@ -56,6 +58,13 @@ var _catalog_received := false
 var _item_catalog: Array[Dictionary] = []
 var _spawn_message := "Wähle einen Gegenstand und die Anzahl der Kopien."
 var _spawn_values: Array = []
+var _travel_tab := -1
+var _travel_list: ItemList
+var _travel_local: Button
+var _travel_cross: Button
+var _travel_status: Label
+var _travel_message := "Wähle ein Ziel auf der aktuellen Karte."
+var _travel_entries: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -154,9 +163,12 @@ func _ready() -> void:
 	_add_world(_make_tab(tabs, "Welt"))
 	_add_spawner(_make_tab(tabs, "Item-Spawner"))
 	var spawner_tab := tabs.get_tab_count() - 1
+	_add_travel(_make_tab(tabs, "Teleport"))
+	_travel_tab = tabs.get_tab_count() - 1
 	tabs.tab_changed.connect(func(index: int) -> void:
 		if index == spawner_tab and not _catalog_received:
 			catalog_requested.emit()
+		refresh_travel_if_visible()
 	)
 	content.add_child(HSeparator.new())
 
@@ -231,10 +243,12 @@ func _apply_language(language: String) -> void:
 	_list_profiles(_selected_profile())
 	_show_profile_status(_status_message, _status_profile)
 	_show_spawn_message(_spawn_message, _spawn_values)
+	_render_travel_targets()
+	show_travel_result(_travel_message)
 	language_changed.emit()
 
 func _translate_controls(node: Node) -> void:
-	if node != _profile_status and node != _spawner_status and (node is Label or (node is Button and not node is OptionButton)):
+	if node != _profile_status and node != _spawner_status and node != _travel_status and (node is Label or (node is Button and not node is OptionButton)):
 		_translate_property(node, &"text")
 	if node is LineEdit or node is TextEdit:
 		_translate_property(node, &"placeholder_text")
@@ -537,6 +551,86 @@ func _show_spawn_message(message: String, values: Array = []) -> void:
 	_spawn_message = message
 	_spawn_values = values
 	_spawner_status.text = Locale.text(message) if values.is_empty() else Locale.text(message) % values
+
+func _add_travel(parent: VBoxContainer) -> void:
+	var hint := Label.new()
+	hint.text = "Zum Ziel bleibt auf der Karte. Karte wechseln nutzt den normalen Übergang mit seinen Spielregeln."
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parent.add_child(hint)
+	_travel_list = ItemList.new()
+	_travel_list.name = "TravelTargets"
+	_travel_list.custom_minimum_size.y = 160.0
+	_travel_list.item_selected.connect(func(_index: int) -> void: _refresh_travel_buttons())
+	parent.add_child(_travel_list)
+	var actions := HBoxContainer.new()
+	parent.add_child(actions)
+	_travel_local = Button.new()
+	_travel_local.name = "TravelLocal"
+	_travel_local.text = "Zum Ziel"
+	_travel_local.disabled = true
+	_travel_local.pressed.connect(func() -> void: _request_travel(false))
+	actions.add_child(_travel_local)
+	_travel_cross = Button.new()
+	_travel_cross.name = "TravelAcross"
+	_travel_cross.text = "Karte wechseln"
+	_travel_cross.disabled = true
+	_travel_cross.pressed.connect(func() -> void: _request_travel(true))
+	actions.add_child(_travel_cross)
+	var refresh := Button.new()
+	refresh.text = "Ziele aktualisieren"
+	refresh.pressed.connect(travel_targets_requested.emit)
+	actions.add_child(refresh)
+	_travel_status = Label.new()
+	_travel_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_travel_status.text = _travel_message
+	parent.add_child(_travel_status)
+
+func refresh_travel_if_visible() -> void:
+	if _tabs.current_tab == _travel_tab:
+		travel_targets_requested.emit()
+
+func set_travel_targets(entries: Array[Dictionary]) -> void:
+	_travel_entries = entries
+	_render_travel_targets()
+	show_travel_result("Keine Ziele auf der aktuellen Karte." if entries.is_empty() else "Wähle ein Ziel auf der aktuellen Karte.")
+
+func _render_travel_targets() -> void:
+	var selected_id: int = _selected_travel_target().get("id", 0)
+	_travel_list.clear()
+	var selected_index := 0
+	for entry: Dictionary in _travel_entries:
+		var title := Locale.text(entry.title) if not entry.cross and entry.kind != "Händler" else String(entry.title)
+		var number: int = entry.get("number", 0)
+		if number > 0:
+			title += " %d" % number
+		if entry.locked:
+			title += " (%s)" % Locale.text("verschlossen")
+		var index := _travel_list.item_count
+		_travel_list.add_item("%s · %s · %d m" % [Locale.text(entry.kind), title, roundi(entry.distance)])
+		_travel_list.set_item_metadata(index, entry)
+		if entry.id == selected_id:
+			selected_index = index
+	if _travel_list.item_count > 0:
+		_travel_list.select(selected_index)
+	_refresh_travel_buttons()
+
+func _selected_travel_target() -> Dictionary:
+	var selected := _travel_list.get_selected_items()
+	return {} if selected.is_empty() else _travel_list.get_item_metadata(selected[0])
+
+func _refresh_travel_buttons() -> void:
+	var entry := _selected_travel_target()
+	_travel_local.disabled = entry.is_empty()
+	_travel_cross.disabled = not entry.get("cross", false) or entry.get("locked", false)
+
+func _request_travel(cross_map: bool) -> void:
+	var entry := _selected_travel_target()
+	if not entry.is_empty():
+		travel_requested.emit(entry.id, cross_map)
+
+func show_travel_result(message: String) -> void:
+	_travel_message = message
+	_travel_status.text = Locale.text(message)
 
 func _add_world(parent: VBoxContainer) -> void:
 	var time_label := Label.new()
