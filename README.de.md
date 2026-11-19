@@ -1,4 +1,4 @@
-# Vostok Trainer 0.6.1
+# Vostok Trainer 0.7.0
 
 [Neueste VostokTrainer.vmz direkt herunterladen](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [English documentation](./README.md)
 
@@ -15,6 +15,10 @@ Oben rechts kannst du zwischen **Deutsch** und **English** wechseln. Die Auswahl
 - **Kein Waffenverschleiß** hält den aktuellen Waffenzustand beim Schießen konstant.
 - **Keine Ladehemmungen** verhindert neue Ladehemmungen und löst bestehende, sobald die Waffe wieder bedienbar ist. Der Schalter funktioniert unabhängig vom Waffenverschleiß.
 - **Godmode** blockiert regulären Schaden und hält Gesundheit und Sauerstoff voll.
+- **Kein Sturzschaden** verhindert Schaden und Brüche durch Stürze. Der Schalter funktioniert auch bei ausgeschaltetem Godmode.
+- **Mehr Tragkraft** verfünffacht die Grundtragkraft und behält die Ausrüstungsboni bei.
+- **Sofort heilen** füllt Gesundheit und Sauerstoff auf und behandelt Verletzungen. Die Aktion ist in einer geladenen Karte mit lebendem Charakter verfügbar.
+- **Sprinttempo** erhöht die Sprintgeschwindigkeit bis auf das Doppelte. Der normale Ausdauerverbrauch bleibt aktiv.
 - **Energie und Flüssigkeit auffüllen** hält beide Werte voll.
 - **Nachtsicht** hellt dunkle Bildbereiche auf und färbt das Bild grün.
 

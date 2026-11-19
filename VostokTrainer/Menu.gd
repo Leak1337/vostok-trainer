@@ -8,6 +8,8 @@ signal marker_color_changed(category: StringName, color: Color)
 signal language_changed
 signal time_requested(minutes: int)
 signal weather_requested(weather: String)
+signal heal_requested
+signal sprint_changed(multiplier: float)
 signal close_requested
 
 const LootFilter = preload("LootFilter.gd")
@@ -38,6 +40,8 @@ var _dirty := false
 var _world_time: HSlider
 var _world_weather: OptionButton
 var _world_actions: Array[BaseButton] = []
+var _heal_button: Button
+var _sprint_slider: HSlider
 
 
 func _ready() -> void:
@@ -103,8 +107,11 @@ func _ready() -> void:
 	_add_switch(player, &"no_wear", "Kein Waffenverschleiß", "Erhält den aktuellen Zustand beim Schießen.")
 	_add_switch(player, &"no_jam", "Keine Ladehemmungen", "Verhindert neue Ladehemmungen und löst bestehende beim Einsatz der Waffe.")
 	_add_switch(player, &"godmode", "Godmode", "Schützt vor Schaden und hält Gesundheit und Sauerstoff voll.")
+	_add_switch(player, &"no_fall_damage", "Kein Sturzschaden", "Verhindert Schaden und Brüche durch Stürze.")
+	_add_switch(player, &"carry_boost", "Mehr Tragkraft", "Verfünffacht die Grundtragkraft. Ausrüstungsboni bleiben erhalten.")
 	_add_switch(player, &"needs", "Energie und Flüssigkeit auffüllen")
 	_add_switch(player, &"night_vision", "Nachtsicht", "Hellt dunkle Bildbereiche auf und färbt das Bild grün.")
+	_add_player_actions(player)
 
 	var enemy := _make_tab(tabs, "Personen-ESP")
 	_add_switch(enemy, &"enemy_esp", "Gegner anzeigen")
@@ -161,6 +168,15 @@ func disable_option(id: StringName, reason: String) -> void:
 	_switches[id].disabled = true
 	_switches[id].set_meta(&"source_tooltip_text", reason)
 	_switches[id].tooltip_text = Locale.text(reason)
+
+func set_heal_available(available: bool) -> void:
+	_heal_button.disabled = not available
+
+func disable_sprint() -> void:
+	_sprint_slider.editable = false
+	var reason := "Der Bewegungshook ist nicht verfügbar."
+	_sprint_slider.set_meta(&"source_tooltip_text", reason)
+	_sprint_slider.tooltip_text = Locale.text(reason)
 
 func restore_preferences() -> void:
 	_profiles.read()
@@ -374,6 +390,40 @@ func _add_profiles(parent: VBoxContainer) -> void:
 	_add_color_picker(parent, &"loot", "Farbe für gewöhnlichen Loot")
 	_add_color_picker(parent, &"match", "Farbe für Suchtreffer")
 
+func _add_player_actions(parent: VBoxContainer) -> void:
+	_heal_button = Button.new()
+	_heal_button.name = "HealPlayer"
+	_heal_button.text = "Sofort heilen"
+	_heal_button.tooltip_text = "Füllt Gesundheit und Sauerstoff auf und behandelt Verletzungen."
+	_heal_button.disabled = true
+	_heal_button.pressed.connect(heal_requested.emit)
+	parent.add_child(_heal_button)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override(&"separation", 12)
+	parent.add_child(row)
+	var caption := Label.new()
+	caption.text = "Sprinttempo"
+	row.add_child(caption)
+	_sprint_slider = HSlider.new()
+	_sprint_slider.name = "SprintMultiplier"
+	_sprint_slider.min_value = 1.0
+	_sprint_slider.max_value = 2.0
+	_sprint_slider.step = 0.1
+	_sprint_slider.value = 1.0
+	_sprint_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sprint_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_sprint_slider.tooltip_text = "Erhöht nur das Sprinttempo. Ausdauer und andere Bewegungen bleiben wie gewohnt."
+	row.add_child(_sprint_slider)
+	var readout := Label.new()
+	readout.text = "1.0×"
+	readout.custom_minimum_size.x = 45
+	readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(readout)
+	_sprint_slider.value_changed.connect(func(value: float) -> void:
+		readout.text = "%.1f×" % value
+		sprint_changed.emit(value)
+	)
+
 func _add_world(parent: VBoxContainer) -> void:
 	var time_label := Label.new()
 	time_label.text = "Uhrzeit"
@@ -565,3 +615,4 @@ func _queue_save() -> void:
 func _reset() -> void:
 	for toggle in _switches.values():
 		toggle.button_pressed = false
+	_sprint_slider.value = 1.0

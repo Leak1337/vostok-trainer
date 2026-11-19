@@ -1,4 +1,4 @@
-# Vostok Trainer 0.6.1
+# Vostok Trainer 0.7.0
 
 [Download the latest VostokTrainer.vmz](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [Deutsche Anleitung](./README.de.md)
 
@@ -21,6 +21,10 @@ Use the language selector at the top right to switch between **English** and **D
 - **No Weapon Wear** preserves the weapon's current condition when firing.
 - **No Weapon Jams** prevents new jams and clears an existing jam when the weapon is ready to use. It works independently of weapon wear.
 - **God Mode** blocks regular damage and keeps health and oxygen full.
+- **No Fall Damage** prevents fall damage and fractures independently of God Mode.
+- **Increased Carry Capacity** multiplies base carry capacity by five and keeps equipment bonuses.
+- **Heal Now** restores health and oxygen and treats injuries. It is available on a loaded map while your character is alive.
+- **Sprint Speed** increases sprint speed up to twice its normal value. Stamina use still applies.
 - **Keep Energy and Hydration Full** keeps both meters full.
 - **Night Vision** brightens dark areas and adds a green tint.
 
