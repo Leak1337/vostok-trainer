@@ -5,6 +5,7 @@ const EnemySkeleton = preload("EnemySkeleton.gd")
 const EspProfiles = preload("EspProfiles.gd")
 const PersonRadar = preload("PersonRadar.gd")
 const LootClusters = preload("LootClusters.gd")
+const Locale = preload("Locale.gd")
 
 enum Kind { AI, PICKUP, CONTAINER, TRADER, CAT, GATHERING_NOMAD }
 
@@ -209,7 +210,7 @@ func _scan_targets(camera: Camera3D, screen: Rect2) -> void:
 			Kind.CAT:
 				var cat_data := target.get(&"gameData") as Resource
 				if not cat_data or not cat_data.get(&"catDead"):
-					info = {"text": "Katze", "color": NPC_COLOR}
+					info = {"text": Locale.text("Katze"), "color": NPC_COLOR}
 		if info.is_empty():
 			continue
 		if actor and radar_enabled:
@@ -278,13 +279,14 @@ func _ai_info(target: Node3D, for_radar: bool) -> Dictionary:
 
 func _nomad_info(target: Node3D) -> Dictionary:
 	var nickname := str(target.get(&"nickname")).strip_edges()
-	return {"text": "Nomade" if nickname.is_empty() else "Nomade · " + nickname, "color": NPC_COLOR}
+	var label := Locale.text("Nomade")
+	return {"text": label if nickname.is_empty() else label + " · " + nickname, "color": NPC_COLOR}
 
 func _trader_info(target: Node3D) -> Dictionary:
 	var data := target.get(&"traderData") as Resource
 	if not data:
 		return {}
-	return {"text": "Händler · " + str(data.get(&"name")), "color": TRADER_COLOR}
+	return {"text": Locale.text("Händler") + " · " + str(data.get(&"name")), "color": TRADER_COLOR}
 
 func _pickup_info(target: Node3D) -> Dictionary:
 	if not _options.get(&"loot_esp", false) or target.process_mode == Node.PROCESS_MODE_DISABLED:
@@ -320,11 +322,11 @@ func _container_info(container: Node3D) -> Dictionary:
 		return {}
 	var title := str(container.get(&"containerName")).strip_edges()
 	if title.is_empty():
-		title = "Behälter"
+		title = Locale.text("Behälter")
 	if container.get(&"locked"):
-		title += " (verschlossen)"
+		title += " (%s)" % Locale.text("verschlossen")
 	if slots.is_empty():
-		title += " · leer"
+		title += " · " + Locale.text("leer")
 	else:
 		title += " · %d" % (details.size() + quests.size())
 	var has_quest := not quests.is_empty()
@@ -333,7 +335,7 @@ func _container_info(container: Node3D) -> Dictionary:
 	quests.append_array(details)
 	var matched := quests.any(func(item: Dictionary) -> bool: return item.matched)
 	if matched:
-		title = "[Treffer] " + title
+		title = Locale.text("[Treffer]") + " " + title
 	var color: Color = QUEST_COLOR if has_quest else _marker_colors[&"match"] if matched else CONTAINER_COLOR
 	return {"text": title, "color": color, "quest": has_quest, "matched": matched, "details": quests}
 
@@ -351,11 +353,11 @@ func _item_info(slot: Resource) -> Dictionary:
 	var quest := category == &"quest"
 	var title := ("[Quest] " if quest else "") + str(item.get(&"name"))
 	if matched:
-		title = ("[Merkliste] " if match_kind == &"watch" else "[Suche] ") + title
+		title = Locale.text("[Merkliste]" if match_kind == &"watch" else "[Suche]") + " " + title
 	if item.get(&"showAmount") and int(slot.get(&"amount")) > 1:
 		title += " ×%d" % int(slot.get(&"amount"))
 	var rarity = item.get(&"rarity")
-	title += " · %s" % RARITY_LABELS.get(rarity, "Ohne Seltenheit")
+	title += " · %s" % Locale.text(RARITY_LABELS.get(rarity, "Ohne Seltenheit"))
 	var color: Color = _marker_colors[&"loot"]
 	var priority := 0
 	if quest:
@@ -431,13 +433,13 @@ func _draw_loot_overview(markers: Array[Dictionary], screen: Rect2) -> void:
 	var detail_rows := mini(focused_details.size(), detail_limit)
 	var top_left := Vector2(screen.end.x - width - 20.0, 56.0)
 	draw_rect(Rect2(top_left, Vector2(width, rows * 30.0 + detail_rows * 17.0 + 32.0)), LABEL_BACKGROUND)
-	draw_string(font, top_left + Vector2(12.0, 20.0), "Loot in Blickrichtung", HORIZONTAL_ALIGNMENT_LEFT, width - 24.0, 15, Color.WHITE)
+	draw_string(font, top_left + Vector2(12.0, 20.0), Locale.text("Loot in Blickrichtung"), HORIZONTAL_ALIGNMENT_LEFT, width - 24.0, 15, Color.WHITE)
 	var row := top_left + Vector2(12.0, 43.0)
 	for index in rows:
 		var marker: Dictionary = nearby[index]
 		var title: String = marker.title
 		if index == 0 and focused_details.size() > detail_rows:
-			title += " · +%d weitere" % (focused_details.size() - detail_rows)
+			title += " · " + Locale.text("+%d weitere") % (focused_details.size() - detail_rows)
 		draw_string(font, row, title, HORIZONTAL_ALIGNMENT_LEFT, width - 24.0, 14, marker.color)
 		row.y += 20.0
 		if index == 0:

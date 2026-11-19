@@ -5,6 +5,7 @@ signal distance_changed(category: StringName, meters: float)
 signal loot_category_changed(category: StringName, enabled: bool)
 signal search_changed(query: String, watchlist: String, matches_only: bool)
 signal marker_color_changed(category: StringName, color: Color)
+signal language_changed
 signal time_requested(minutes: int)
 signal weather_requested(weather: String)
 signal close_requested
@@ -12,11 +13,14 @@ signal close_requested
 const LootFilter = preload("LootFilter.gd")
 const EspProfiles = preload("EspProfiles.gd")
 const WorldControl = preload("WorldControl.gd")
+const Locale = preload("Locale.gd")
 const DEFAULT_DISTANCE := 150.0
 
 var _screen: Control
 var _switches: Dictionary[StringName, CheckButton] = {}
 var _first_switch: CheckButton
+var _tabs: TabContainer
+var _language_picker: OptionButton
 var _sliders: Dictionary[StringName, HSlider] = {}
 var _categories: Dictionary[StringName, CheckBox] = {}
 var _color_pickers: Dictionary[StringName, ColorPickerButton] = {}
@@ -25,6 +29,8 @@ var _watchlist: TextEdit
 var _profile_picker: OptionButton
 var _profile_name: LineEdit
 var _profile_status: Label
+var _status_message := "Deine letzten ESP-Einstellungen und die Merkliste werden automatisch gespeichert."
+var _status_profile := ""
 var _profiles := EspProfiles.new()
 var _save_timer: Timer
 var _restoring := false
@@ -64,12 +70,26 @@ func _ready() -> void:
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override(&"separation", 7)
 	panel.add_child(content)
+	var header := HBoxContainer.new()
+	content.add_child(header)
 	var title := Label.new()
 	title.text = "Vostok Trainer"
 	title.add_theme_font_size_override(&"font_size", 27)
 	title.add_theme_color_override(&"font_color", Color("d9f4ec"))
-	content.add_child(title)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+	_language_picker = OptionButton.new()
+	_language_picker.name = "TrainerLanguage"
+	_language_picker.tooltip_text = "Sprache / Language"
+	_language_picker.add_item("Deutsch")
+	_language_picker.add_item("English")
+	_language_picker.item_selected.connect(func(index: int) -> void:
+		_apply_language("en" if index == 1 else "de")
+		_queue_save()
+	)
+	header.add_child(_language_picker)
 	var tabs := TabContainer.new()
+	_tabs = tabs
 	content.add_child(tabs)
 	_screen.resized.connect(func() -> void:
 		panel.custom_minimum_size.x = minf(680.0, _screen.size.x - 24.0)
@@ -139,11 +159,12 @@ func open() -> void:
 
 func disable_option(id: StringName, reason: String) -> void:
 	_switches[id].disabled = true
-	_switches[id].tooltip_text = reason
+	_switches[id].set_meta(&"source_tooltip_text", reason)
+	_switches[id].tooltip_text = Locale.text(reason)
 
 func restore_preferences() -> void:
 	_profiles.read()
-	_list_profiles()
+	_apply_language(_profiles.language)
 	_apply_profile(_profiles.last)
 
 func flush_preferences() -> void:
@@ -154,10 +175,41 @@ func flush_preferences() -> void:
 	if error != OK:
 		push_warning("[Vostok Trainer] ESP-Einstellungen konnten nicht gespeichert werden (Fehler %d)." % error)
 		if is_instance_valid(_profile_status):
-			_profile_status.text = "Speichern fehlgeschlagen."
+			_show_profile_status("Speichern fehlgeschlagen.")
 
 func _exit_tree() -> void:
 	flush_preferences()
+
+func _apply_language(language: String) -> void:
+	Locale.language = language
+	_profiles.language = language
+	_language_picker.select(1 if language == "en" else 0)
+	for index in _tabs.get_tab_count():
+		_tabs.set_tab_title(index, Locale.text(String(_tabs.get_tab_control(index).name)))
+	_translate_controls(_screen)
+	for index in _world_weather.item_count:
+		var key = _world_weather.get_item_metadata(index)
+		_world_weather.set_item_text(index, Locale.text(WorldControl.WEATHER[key]))
+	_list_profiles(_selected_profile())
+	_show_profile_status(_status_message, _status_profile)
+	language_changed.emit()
+
+func _translate_controls(node: Node) -> void:
+	if node != _profile_status and (node is Label or (node is Button and not node is OptionButton)):
+		_translate_property(node, &"text")
+	if node is LineEdit or node is TextEdit:
+		_translate_property(node, &"placeholder_text")
+	if node is Control:
+		_translate_property(node, &"tooltip_text")
+	for child in node.get_children():
+		_translate_controls(child)
+
+func _translate_property(node: Node, property: StringName) -> void:
+	var meta := StringName("source_" + String(property))
+	var source := String(node.get_meta(meta)) if node.has_meta(meta) else String(node.get(property))
+	if Locale.EN.has(source):
+		node.set_meta(meta, source)
+		node.set(property, Locale.text(source))
 
 func _add_switch(parent: BoxContainer, id: StringName, title: String, hint := "") -> void:
 	var toggle := CheckButton.new()
@@ -315,7 +367,7 @@ func _add_profiles(parent: VBoxContainer) -> void:
 	save_row.add_child(save_button)
 	_profile_status = Label.new()
 	_profile_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_profile_status.text = "Deine letzten ESP-Einstellungen und die Merkliste werden automatisch gespeichert."
+	_profile_status.text = _status_message
 	parent.add_child(_profile_status)
 	parent.add_child(HSeparator.new())
 	_add_color_picker(parent, &"enemy", "Gegnerfarbe")
@@ -417,21 +469,35 @@ func _list_profiles(selected := "Standard") -> void:
 	names.sort()
 	for name in EspProfiles.BUILT_INS.keys() + names:
 		var index := _profile_picker.item_count
-		_profile_picker.add_item(name)
+		_profile_picker.add_item(_profile_label(name))
+		_profile_picker.set_item_metadata(index, name)
 		if name == selected:
 			_profile_picker.select(index)
 
+func _selected_profile() -> String:
+	if _profile_picker.selected < 0:
+		return "Standard"
+	return str(_profile_picker.get_item_metadata(_profile_picker.selected))
+
+func _profile_label(name: String) -> String:
+	return Locale.text(name) if EspProfiles.BUILT_INS.has(name) else name
+
+func _show_profile_status(message: String, profile := "") -> void:
+	_status_message = message
+	_status_profile = profile
+	_profile_status.text = Locale.text(message) if profile.is_empty() else Locale.text(message) % _profile_label(profile)
+
 func _load_selected_profile() -> void:
-	var name := _profile_picker.get_item_text(_profile_picker.selected)
+	var name := _selected_profile()
 	var state: Dictionary = EspProfiles.BUILT_INS.get(name, _profiles.custom.get(name, {}))
 	_apply_profile(state, false)
 	_queue_save()
-	_profile_status.text = "%s geladen." % name
+	_show_profile_status("%s geladen.", name)
 
 func _save_named_profile() -> void:
 	var name := _profile_name.text.strip_edges()
 	if name.is_empty() or EspProfiles.BUILT_INS.has(name):
-		_profile_status.text = "Gib einen eigenen Profilnamen ein."
+		_show_profile_status("Gib einen eigenen Profilnamen ein.")
 		return
 	_profiles.last = _capture_profile()
 	_profiles.custom[name] = _capture_profile(false)
@@ -439,7 +505,7 @@ func _save_named_profile() -> void:
 	flush_preferences()
 	if not _dirty:
 		_list_profiles(name)
-		_profile_status.text = "%s gespeichert." % name
+		_show_profile_status("%s gespeichert.", name)
 
 func _apply_profile(state: Dictionary, restore_search := true) -> void:
 	_restoring = true

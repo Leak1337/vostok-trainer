@@ -17,6 +17,7 @@ const DEFAULT_COLORS := {
 
 var last: Dictionary = {}
 var custom: Dictionary = {}
+var language := "de"
 
 func read() -> void:
 	var config := ConfigFile.new()
@@ -28,6 +29,7 @@ func read() -> void:
 		return
 	var saved_last = config.get_value("esp", "last", {})
 	var saved_custom = config.get_value("esp", "profiles", {})
+	language = "en" if config.get_value("ui", "language", "de") == "en" else "de"
 	if saved_last is Dictionary:
 		last = saved_last
 	if saved_custom is Dictionary:
@@ -39,6 +41,7 @@ func save() -> Error:
 	var config := ConfigFile.new()
 	config.set_value("esp", "last", last)
 	config.set_value("esp", "profiles", custom)
+	config.set_value("ui", "language", language)
 	var pending := CONFIG_PATH + ".tmp"
 	var error := config.save(pending)
 	if error != OK:

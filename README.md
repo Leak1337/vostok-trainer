@@ -1,59 +1,63 @@
-# Vostok Trainer 0.6.0
+# Vostok Trainer 0.6.1
 
-Ein In-Game-Trainer für den Einzelspieler von **Road to Vostok 0.2.3.1** mit Metro Mod Loader 3.5.x.
+[Download the latest VostokTrainer.vmz](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [Deutsche Anleitung](./README.de.md)
 
-**F6** öffnet das Trainer-Menü. Das Spiel pausiert, solange das Menü offen ist. **F6** oder **Esc** schließen es. Die Hauptschalter für ESP und Spielerfunktionen starten ausgeschaltet. ESP-Einstellungen und Merkliste werden automatisch gespeichert.
+An in-game trainer for single-player **Road to Vostok 0.2.3.1** using Metro Mod Loader 3.5.x.
 
-## Spieler
+Press **F6** to open the trainer. The game pauses while the menu is open. Press **F6** or **Esc** to close it. ESP and gameplay features start switched off. The trainer saves your display settings, search, and watchlist automatically.
 
-- **Unbegrenzte Ausdauer** hält Lauf- und Armausdauer voll.
-- **Unbegrenzte Munition** ersetzt abgefeuerte Patronen. Lade die Waffe einmal. Bei manuell repetierenden Waffen bleibt das Repetieren erforderlich.
-- **Kein Waffenverschleiß** hält den aktuellen Waffenzustand beim Schießen konstant.
-- **Keine Ladehemmungen** verhindert neue Ladehemmungen und löst bestehende, sobald die Waffe wieder bedienbar ist. Der Schalter funktioniert unabhängig vom Waffenverschleiß.
-- **Godmode** blockiert regulären Schaden und hält Gesundheit und Sauerstoff voll.
-- **Energie und Flüssigkeit auffüllen** hält beide Werte voll.
-- **Nachtsicht** hellt dunkle Bildbereiche auf und färbt das Bild grün.
+Use the language selector at the top right to switch between **English** and **Deutsch**. Your selection applies to the menu and trainer overlays and is remembered between sessions.
 
-## Personen-ESP
+## Install or update
 
-**Gegner anzeigen**, **Händler anzeigen** und **Andere NPCs anzeigen** sind unabhängig schaltbar. Aktive Händler werden türkis markiert, aktive Nomaden und die Katze hellgrün. **Skelett anzeigen** folgt den aktuellen Knochenpositionen von Gegnern und umherziehenden Nomaden. Die Skelettlinien werden mit zunehmender Entfernung dünner. Linien zur Bildschirmmitte und Entfernungsangaben sind separat einstellbar. Die gemeinsame Personen-Reichweite ist von 10 bis 400 m einstellbar. Standard sind 150 m.
+1. Install [Metro Mod Loader 3.5.x](https://github.com/ametrocavich/vostok-mod-loader/releases) if needed. Put `override.cfg` and `modloader.gd` next to `RTV.exe`.
+2. [Download `VostokTrainer.vmz`](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) and put it in the `mods` folder next to `RTV.exe`. Create the folder if needed. When updating, close the game and replace the old VMZ.
+3. Start the game, enable **Vostok Trainer** in the mod loader, load a save, and press **F6**.
 
-**Radar anzeigen** zeigt Gegner, Händler und NPCs rund um dich, auch seitlich und hinter dir. Das Radar sitzt unten links, dreht sich mit der Blickrichtung und nutzt die Personen-Reichweite sowie die jeweiligen ESP-Farben. Du kannst es ohne die einzelnen Personenmarker einschalten.
+## Player
 
-## Loot-ESP und Loot-Filter
+- **Unlimited Stamina** keeps sprinting and arm stamina full.
+- **Unlimited Ammo** replaces cartridges as you fire. Load the weapon once. Manually operated weapons still need to be cycled.
+- **No Weapon Wear** preserves the weapon's current condition when firing.
+- **No Weapon Jams** prevents new jams and clears an existing jam when the weapon is ready to use. It works independently of weapon wear.
+- **God Mode** blocks regular damage and keeps health and oxygen full.
+- **Keep Energy and Hydration Full** keeps both meters full.
+- **Night Vision** brightens dark areas and adds a green tint.
 
-- **Lose Gegenstände anzeigen** markiert Bodenloot im Sichtfeld auch hinter Wänden.
-- **Behälter und Lager anzeigen** zeigt eine Vorschau der verfügbaren Inhalte von Kisten, Schränken und Lagern vor dem Öffnen. Verschlossene Behälter sind gekennzeichnet. Leere Behälter lassen sich zuschalten.
-- **Loot in Blickrichtung auflisten** sammelt Marker rund um die Bildschirmmitte. Richte den Blick auf ein Gebäude, um Loot im Sichtfeld zu sehen, und auf einen Behältermarker, um mehr von seinem Inhalt zu lesen. Die Übersicht kann auch Loot hinter dem Gebäude erfassen, wenn er in derselben Blickrichtung und Reichweite liegt.
-- **Nahe Loot-Marker bündeln** fasst eng beieinanderliegende Marker zu einer Gruppe zusammen und zeigt die Zahl der Quest-Treffer. Richte das Fadenkreuz auf die Gruppe, um bis zu fünf Einzelziele und die Anzahl weiterer Treffer zu sehen.
-- **Loot-Filter** bietet eine Mehrfachauswahl für Waffen, Munition, Zubehör, Essen und Trinken, Medizin, Ausrüstung, Elektronik, Schlüssel, Quest-Gegenstände und Sonstiges. Die Filter gelten für Bodenloot und Behälterinhalte. Quest-Gegenstände sind gelb und mit **[Quest]** beschriftet. Für Händleraufgaben zählt, was auf deiner Aufgabenliste notiert ist.
-- Die Seltenheit steht am Gegenstandsnamen. Normale Waffen sind orange, seltene Gegenstände blau und legendäre violett. Bei Waffen mit höherer Seltenheit gilt die Seltenheitsfarbe. Quest-Gegenstände behalten ihre gelbe Markierung und zeigen ihre Seltenheit zusätzlich als Text.
-- Linien, Entfernungsangaben und ein Seltenheitsfilter sind separat einstellbar. Die Loot-Reichweite ist unabhängig von der Personen-Reichweite und auf 10 bis 400 m einstellbar. Standard sind 150 m.
+## Actor ESP and radar
 
-Das ESP aktualisiert die Zielliste und Loot-Infos ungefähr zehnmal pro Sekunde. Die Bildschirmpositionen und Skelette sichtbarer Ziele werden pro Bild neu berechnet.
+**Show Enemies**, **Show Traders**, and **Show Other NPCs** are independent toggles. Active traders are cyan. Active nomads and the cat are light green. **Show Skeletons** follows the animated bones of enemies and roaming nomads. Lines get thinner with distance. Tracers and distance labels are configurable. The shared actor range is **10–400 m**, with a default of **150 m**.
 
-## Item-Suche und Merkliste
+**Show Radar** displays enemies, traders, and NPCs around and behind you. The radar sits at the bottom left, rotates with your camera, and uses the actor ESP range and colors. It can run by itself.
 
-Aktiviere Bodenloot oder Behälter unter **Loot-ESP** und öffne **Item-Suche**. Die Suche findet Teile des Namens oder der internen Item-ID. In die Merkliste passen bis zu 24 Begriffe und insgesamt 512 Zeichen. Trenne Begriffe mit Kommas oder Zeilenumbrüchen.
+## Loot ESP and loot filters
 
-Suchtreffer sind mit **[Suche]** oder **[Merkliste]** gekennzeichnet. Behälter mit passenden Gegenständen tragen **[Treffer]**. Treffer erscheinen auch bei ausgefilterten Kategorien. Mit **Nur Suchtreffer und Merkliste anzeigen** blendest du übrigen Loot aus, solange mindestens ein Suchbegriff vorhanden ist.
+- **Show Ground Loot** marks loose items in view, including through walls.
+- **Show Containers and Storage** previews the contents of crates, cabinets, and storage before you open them. Locked containers are labeled. **Show Empty Containers** is optional.
+- **List Loot in View** collects nearby markers around the center of the screen. Aim at a building to see loot in that direction or at a container to see more of its contents. Loot farther behind a building can also appear if it is in the same direction and within range.
+- **Group Nearby Loot Markers** combines nearby markers and counts quest matches. Aim at the group to see up to five individual targets and how many more are in the group.
+- **Loot Filters** lets you select weapons, ammunition, attachments, food and drink, medical supplies, gear, electronics, keys, quest items, and other items. Filters apply to both ground loot and container contents. Items required by tasks in your notes are marked **[Quest]** in yellow.
+- Item names show their rarity. Common weapons are orange, rare items blue, and legendary items violet. Rare and legendary weapons use their rarity color. Quest items keep their yellow label and show their rarity as text.
+- Tracers, distance labels, and a rare/legendary-only filter are independent. The loot range is **10–400 m**, with a default of **150 m**.
 
-## ESP-Profile
+ESP refreshes the target list and loot data about ten times per second. Visible marker positions and skeletons are projected each frame.
 
-Unter **Profile** findest du die Vorlagen **Standard**, **Quest**, **Waffen** und **Alles**. Gib einen eigenen Namen ein und klicke auf **Speichern**, um die aktuellen Reichweiten, Loot-Kategorien, Anzeigeoptionen und Farben zu sichern. Unter demselben Namen kannst du das Profil aktualisieren.
+## Item search and watchlist
 
-Suche, Merkliste und die letzten ESP-Einstellungen bleiben beim Spielneustart erhalten. Beim Profilwechsel bleiben die Suche und Merkliste bestehen. Die Hauptschalter für ESP und Spielerfunktionen werden separat bedient.
+Enable ground loot or containers in **Loot ESP**, then open **Item Search**. Search for part of an item name or its internal ID. The watchlist supports up to 24 terms and 512 characters, with entries separated by commas or line breaks.
 
-## Welt
+Matches are labeled **[Search]** or **[Watchlist]**. Containers with matching items are labeled **[Match]**. Matches are shown even if their item categories are filtered out. **Show Only Search and Watchlist Matches** hides other loot while at least one search term is set.
 
-In einer geladenen Karte kannst du unter **Welt** die Uhrzeit in Fünf-Minuten-Schritten setzen oder den normalen Zeitlauf anhalten. Schlaf und Reisen nutzen weiterhin ihre eigenen Zeitsprünge. **Wetter setzen** bietet unter anderem Klar, Regen, Nebel und Sturm. Draußen wechselt das Spiel zu diesem Wetter, danach läuft die normale Wettersimulation weiter. Uhrzeit und Wetter können beim nächsten regulären Speichern in den Spielstand übernommen werden.
+## ESP profiles
 
-## Installieren oder aktualisieren
+The **Profiles** tab includes **Default**, **Quest**, **Weapons**, and **Everything**. Enter a name and click **Save** to store your current ranges, loot filters, display options, and colors. Save under the same name to update the profile.
 
-1. Falls nötig, installiere [Metro Mod Loader 3.5.x](https://github.com/ametrocavich/vostok-mod-loader/releases). Lege `override.cfg` und `modloader.gd` aus dem Release in den Spielordner neben `RTV.exe`.
-2. Lade [`VostokTrainer.vmz`](./VostokTrainer.vmz?raw=true) herunter und lege die Datei in den Unterordner `mods` neben `RTV.exe`. Erstelle den Ordner, falls er fehlt. Ersetze bei einem Update die bisherige `VostokTrainer.vmz` bei geschlossenem Spiel.
-3. Starte das Spiel, aktiviere **Vostok Trainer** im Mod Loader und lade einen Spielstand. Drücke **F6**.
+Your search, watchlist, and last ESP settings are restored when you restart the game. Loading a profile keeps your search and watchlist. ESP and gameplay feature switches are controlled separately.
 
-## Aus dem Quellcode bauen
+## World controls
 
-Packe `mod.txt` und den Ordner `VostokTrainer` zusammen in ein ZIP-Archiv. `mod.txt` muss auf der obersten Ebene des Archivs liegen. Verwende Schrägstriche für die Pfade im ZIP und benenne das Archiv in `VostokTrainer.vmz` um.
+With a map loaded, use the **World** tab to set the time in five-minute increments or freeze the regular clock. Sleeping and traveling can still advance time. **Set Weather** includes Clear, Overcast, Rain, Storm, Fog, Windy, and Aurora. Weather changes appear outdoors, then normal weather simulation resumes. The next regular save can store the changed time and weather.
+
+## Build from source
+
+Zip `mod.txt` and the `VostokTrainer` directory together. Keep `mod.txt` at the archive root, use forward slashes in archive paths, and rename the archive to `VostokTrainer.vmz`.

@@ -1,5 +1,6 @@
 extends RefCounted
 
+const Locale = preload("Locale.gd")
 const CELL := Vector2(82.0, 56.0)
 const FOCUS_RADIUS := 76.0
 
@@ -30,9 +31,9 @@ static func labels(markers: Array[Dictionary], focus: Vector2) -> Array[Dictiona
 			center += marker.p
 			quest_count += int(marker.get("quest", false))
 		center /= float(group.size())
-		var title := "%d Loot-Ziele" % group.size()
+		var title := Locale.text("%d Loot-Ziele") % group.size()
 		if quest_count > 0:
-			title += " · %d Quest" % quest_count
+			title += Locale.text(" · %d Quest") % quest_count
 		var preview: Array[Dictionary] = []
 		var width := font.get_string_size(title, 0, -1, 15).x
 		if center.distance_squared_to(focus) <= FOCUS_RADIUS * FOCUS_RADIUS:
@@ -40,7 +41,7 @@ static func labels(markers: Array[Dictionary], focus: Vector2) -> Array[Dictiona
 				preview.append({"text": marker.title, "color": marker.color})
 				width = maxf(width, font.get_string_size(marker.title, 0, -1, 13).x)
 			if group.size() > preview.size():
-				preview.append({"text": "+%d weitere" % (group.size() - preview.size()), "color": Color.WHITE})
+				preview.append({"text": Locale.text("+%d weitere") % (group.size() - preview.size()), "color": Color.WHITE})
 		layout[index] = {"title": title, "p": center, "actor": false, "kind": first.kind,
 			"color": first.color, "preview": preview, "width": minf(width, 360.0)}
 	return layout

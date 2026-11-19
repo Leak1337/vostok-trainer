@@ -4,6 +4,7 @@ const Menu = preload("Menu.gd")
 const Esp = preload("Esp.gd")
 const NightVision = preload("NightVision.gd")
 const WorldControl = preload("WorldControl.gd")
+const Locale = preload("Locale.gd")
 const GAME_DATA_PATH := "res://Resources/GameData.tres"
 
 var _lib
@@ -48,6 +49,7 @@ func _ready() -> void:
 	_menu.loot_category_changed.connect(_esp.set_loot_category)
 	_menu.search_changed.connect(_esp.set_search)
 	_menu.marker_color_changed.connect(_esp.set_marker_color)
+	_menu.language_changed.connect(_esp.invalidate_targets)
 	_night_vision = NightVision.new()
 	add_child(_night_vision)
 	_world = WorldControl.new()
@@ -74,7 +76,7 @@ func _ready() -> void:
 	]
 	if -1 in damage_hooks:
 		_menu.disable_option(&"godmode", "Ein anderer Mod belegt einen Schadens-Hook.")
-	print("[Vostok Trainer] F6 öffnet das Menü.")
+	print(Locale.text("[Vostok Trainer] F6 öffnet das Menü."))
 
 
 func _input(event: InputEvent) -> void:
