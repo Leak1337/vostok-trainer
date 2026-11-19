@@ -1,4 +1,4 @@
-# Vostok Trainer 0.9.0
+# Vostok Trainer 1.0.0
 
 [Neueste VostokTrainer.vmz direkt herunterladen](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [English documentation](./README.md)
 
@@ -69,6 +69,17 @@ In einer geladenen Karte kannst du unter **Welt** die Uhrzeit in Fünf-Minuten-S
 - **Zum Ziel** versetzt dich auf einen freien Bodenplatz in der Nähe und bleibt auf derselben Karte.
 - **Karte wechseln** benutzt den gewählten Kartenübergang direkt. Das Spiel übernimmt Ankunft, Reisezeit und die regulären Speicherregeln. Verschlossene Übergänge müssen wie gewohnt geöffnet werden.
 - **Letzte Position** erscheint nach einem lokalen Teleport. Sie bringt dich auf derselben Karte zum vorherigen Standort zurück, sofern dort ein Landeplatz gefunden wird.
+- **Position speichern** legt einen persönlichen Wegpunkt auf der aktuellen Karte an. Gib optional einen Namen ein. Derselbe Name aktualisiert den vorhandenen Wegpunkt. Eigene Wegpunkte bleiben nach dem Neustart erhalten und lassen sich in der Zielliste auswählen oder entfernen.
+
+## Hotkeys
+
+Aktiviere **Trainer-Hotkeys aktivieren** unter **Spieler**, um diese Tasten im laufenden Spiel zu nutzen. Die Hotkeys starten ausgeschaltet.
+
+| Taste | Funktion |
+| --- | --- |
+| **F7** | Sofort heilen |
+| **F8** | Aktuelle Position als automatisch benannten Wegpunkt speichern |
+| **F9** | Auf derselben Karte zur letzten Teleport-Position zurückkehren |
 
 ## Installieren oder aktualisieren
 

@@ -73,8 +73,11 @@ func _ready() -> void:
 	_travel.game_data = _data
 	add_child(_travel)
 	_travel.finished.connect(_travel_finished)
+	_travel.waypoints_changed.connect(_waypoints_changed)
 	_menu.travel_targets_requested.connect(_load_travel_targets)
 	_menu.travel_requested.connect(_travel.request)
+	_menu.waypoint_save_requested.connect(_travel.save_waypoint)
+	_menu.waypoint_remove_requested.connect(_travel.remove_waypoint)
 	_menu.catalog_requested.connect(_load_item_catalog)
 	_menu.item_requested.connect(_grant_items)
 	_menu.heal_requested.connect(_player.heal)
@@ -144,6 +147,16 @@ func _input(event: InputEvent) -> void:
 		elif not key.echo and _menu.visible:
 			_closing_with_escape = true
 			_close_menu()
+	elif not _menu.visible and not get_tree().paused and _settings.get(&"quick_keys", false) and key.keycode in [KEY_F7, KEY_F8, KEY_F9] and _travel.available():
+		get_viewport().set_input_as_handled()
+		if key.pressed and not key.echo:
+			match key.keycode:
+				KEY_F7:
+					if _player.can_heal():
+						_player.heal()
+						_show_game_notice("Gesundheit wiederhergestellt.")
+				KEY_F8: _travel.save_waypoint("")
+				KEY_F9: _travel.request(TravelControl.RETURN_ID, false)
 
 
 func _close_menu() -> void:
@@ -163,7 +176,7 @@ func _set_option(id: StringName, enabled: bool) -> void:
 			_world.set_clock_frozen(enabled)
 		&"carry_boost":
 			_player.set_carry_boost(enabled)
-		&"stamina", &"ammo", &"godmode", &"needs", &"no_jam", &"no_wear", &"no_fall_damage", &"oxygen":
+		&"stamina", &"ammo", &"godmode", &"needs", &"no_jam", &"no_wear", &"no_fall_damage", &"oxygen", &"quick_keys":
 			pass
 		_:
 			_esp.set_option(id, enabled)
@@ -244,12 +257,26 @@ func _grant_items(file: String, count: int) -> void:
 	_menu.show_spawn_result(_spawner.add_items(file, count), count)
 
 func _load_travel_targets() -> void:
-	_menu.set_travel_targets(_travel.targets())
+	_menu.set_travel_targets(_travel.targets(), _travel.available())
 
 func _travel_finished(result: String, moved: bool) -> void:
+	if not _menu.visible:
+		_show_game_notice(result)
 	_menu.show_travel_result(result)
 	if moved:
 		_close_menu()
+
+func _waypoints_changed(result: String) -> void:
+	if _menu.visible:
+		_load_travel_targets()
+	else:
+		_show_game_notice(result)
+	_menu.show_travel_result(result)
+
+func _show_game_notice(message: String) -> void:
+	var loader := get_node_or_null("/root/Loader")
+	if loader and loader.has_method(&"Message"):
+		loader.call(&"Message", Locale.text(message), Color.WHITE)
 
 
 func _before_shot() -> void:

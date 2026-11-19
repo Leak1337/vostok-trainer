@@ -15,6 +15,8 @@ signal catalog_requested
 signal item_requested(file: String, count: int)
 signal travel_targets_requested
 signal travel_requested(id: int, cross_map: bool)
+signal waypoint_save_requested(name: String)
+signal waypoint_remove_requested(id: int)
 signal close_requested
 
 const LootFilter = preload("LootFilter.gd")
@@ -65,6 +67,9 @@ var _travel_cross: Button
 var _travel_status: Label
 var _travel_message := "Wähle ein Ziel auf der aktuellen Karte."
 var _travel_entries: Array[Dictionary] = []
+var _waypoint_name: LineEdit
+var _waypoint_save: Button
+var _waypoint_remove: Button
 
 
 func _ready() -> void:
@@ -135,6 +140,7 @@ func _ready() -> void:
 	_add_switch(player, &"needs", "Energie und Flüssigkeit auffüllen")
 	_add_switch(player, &"oxygen", "Unbegrenzter Sauerstoff", "Hält den Sauerstoff auch unter Wasser voll.")
 	_add_switch(player, &"night_vision", "Nachtsicht", "Hellt dunkle Bildbereiche auf und färbt das Bild grün.")
+	_add_switch(player, &"quick_keys", "Trainer-Hotkeys aktivieren", "F7 heilt, F8 speichert einen Wegpunkt, F9 kehrt zur letzten Teleport-Position zurück.")
 	_add_player_actions(player)
 
 	var enemy := _make_tab(tabs, "Personen-ESP")
@@ -580,6 +586,30 @@ func _add_travel(parent: VBoxContainer) -> void:
 	refresh.text = "Ziele aktualisieren"
 	refresh.pressed.connect(travel_targets_requested.emit)
 	actions.add_child(refresh)
+	var waypoint_row := HBoxContainer.new()
+	parent.add_child(waypoint_row)
+	_waypoint_name = LineEdit.new()
+	_waypoint_name.name = "WaypointName"
+	_waypoint_name.placeholder_text = "Optionaler Wegpunktname"
+	_waypoint_name.max_length = 36
+	_waypoint_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	waypoint_row.add_child(_waypoint_name)
+	_waypoint_save = Button.new()
+	_waypoint_save.name = "WaypointSave"
+	_waypoint_save.text = "Position speichern"
+	_waypoint_save.disabled = true
+	_waypoint_save.pressed.connect(func() -> void: waypoint_save_requested.emit(_waypoint_name.text))
+	waypoint_row.add_child(_waypoint_save)
+	_waypoint_remove = Button.new()
+	_waypoint_remove.name = "WaypointRemove"
+	_waypoint_remove.text = "Wegpunkt entfernen"
+	_waypoint_remove.disabled = true
+	_waypoint_remove.pressed.connect(func() -> void:
+		var selected := _selected_travel_target()
+		if selected.get("waypoint", false):
+			waypoint_remove_requested.emit(selected.id)
+	)
+	parent.add_child(_waypoint_remove)
 	_travel_status = Label.new()
 	_travel_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_travel_status.text = _travel_message
@@ -589,8 +619,9 @@ func refresh_travel_if_visible() -> void:
 	if _tabs.current_tab == _travel_tab:
 		travel_targets_requested.emit()
 
-func set_travel_targets(entries: Array[Dictionary]) -> void:
+func set_travel_targets(entries: Array[Dictionary], can_save_waypoint: bool) -> void:
 	_travel_entries = entries
+	_waypoint_save.disabled = not can_save_waypoint
 	_render_travel_targets()
 	show_travel_result("Keine Ziele auf der aktuellen Karte." if entries.is_empty() else "Wähle ein Ziel auf der aktuellen Karte.")
 
@@ -599,7 +630,9 @@ func _render_travel_targets() -> void:
 	_travel_list.clear()
 	var selected_index := 0
 	for entry: Dictionary in _travel_entries:
-		var title := Locale.text(entry.title) if not entry.cross and entry.kind != "Händler" else String(entry.title)
+		var title: String = entry.title
+		if not entry.get("waypoint", false) and not entry.cross and entry.kind != "Händler":
+			title = Locale.text(title)
 		var number: int = entry.get("number", 0)
 		if number > 0:
 			title += " %d" % number
@@ -622,6 +655,7 @@ func _refresh_travel_buttons() -> void:
 	var entry := _selected_travel_target()
 	_travel_local.disabled = entry.is_empty()
 	_travel_cross.disabled = not entry.get("cross", false) or entry.get("locked", false)
+	_waypoint_remove.disabled = not entry.get("waypoint", false)
 
 func _request_travel(cross_map: bool) -> void:
 	var entry := _selected_travel_target()

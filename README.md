@@ -1,4 +1,4 @@
-# Vostok Trainer 0.9.0
+# Vostok Trainer 1.0.0
 
 [Download the latest VostokTrainer.vmz](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [Deutsche Anleitung](./README.de.md)
 
@@ -75,6 +75,17 @@ Open **F6 → Teleport** to see active traders, map exits, and points of interes
 - **Go to Target** places you on clear ground near the selected target on the same map.
 - **Change Map** uses the selected exit from your current location. The game handles arrival, travel time, and its usual save rules. Locked exits still need to be unlocked in the game.
 - **Last Position** appears after a local teleport. It returns you to your previous location on the same map if a landing spot is available.
+- **Save Position** creates a personal waypoint on the current map. Give it an optional name. Saving under an existing name updates that waypoint. Your waypoints persist across restarts and can be selected or removed in the target list.
+
+## Hotkeys
+
+Turn on **Enable Trainer Hotkeys** under **Player** to use these shortcuts during gameplay. They start disabled.
+
+| Key | Action |
+| --- | --- |
+| **F7** | Heal now |
+| **F8** | Save your current position as an automatically named waypoint |
+| **F9** | Return to the last teleport origin on the same map |
 
 ## Build from source
 

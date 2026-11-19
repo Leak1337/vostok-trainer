@@ -1,7 +1,10 @@
 extends Node
 
 signal finished(result: String, moved: bool)
+signal waypoints_changed(result: String)
 
+const WaypointStore = preload("WaypointStore.gd")
+const Locale = preload("Locale.gd")
 const RETURN_ID := -1
 const POI_GROUPS := {
 	&"Well": "Brunnen", &"Fire": "Feuerstelle", &"Radio": "Funkgerät", &"NomadSpot": "Nomadenplatz",
@@ -13,12 +16,16 @@ var _return_map_id := 0
 var _return_point := Vector3.ZERO
 var _pending_id := 0
 var _pending_cross_map := false
+var _waypoints := WaypointStore.new()
+var _point_ids: Dictionary[int, String] = {}
 
 func _ready() -> void:
+	_waypoints.load_waypoints()
 	set_physics_process(false)
 
 func targets() -> Array[Dictionary]:
 	_targets.clear()
+	_point_ids.clear()
 	var result: Array[Dictionary] = []
 	var map := get_node_or_null("/root/Map")
 	var player := _player()
@@ -27,6 +34,15 @@ func targets() -> Array[Dictionary]:
 	if _return_map_id == map.get_instance_id():
 		result.append({"id": RETURN_ID, "title": "Letzte Position", "kind": "Zurück", "cross": false,
 			"locked": false, "distance": player.global_position.distance_to(_return_point)})
+	var points := _waypoints.points(_map_key(map))
+	var names := points.keys()
+	names.sort()
+	for index in names.size():
+		var name: String = names[index]
+		var id := -2 - index
+		_point_ids[id] = name
+		result.append({"id": id, "title": name, "kind": "Wegpunkt", "cross": false, "locked": false,
+			"waypoint": true, "distance": player.global_position.distance_to(points[name])})
 	for trader in get_tree().get_nodes_in_group(&"Trader"):
 		if _within_map(map, trader) and trader.is_visible_in_tree() and &"traderData" in trader:
 			var data := trader.get(&"traderData") as Resource
@@ -53,6 +69,49 @@ func request(id: int, cross_map: bool) -> void:
 	_pending_cross_map = cross_map
 	set_physics_process(true)
 
+func available() -> bool:
+	return _player() != null
+
+func save_waypoint(raw_name: String) -> void:
+	var player := _player()
+	var map := get_node_or_null("/root/Map")
+	if not player or not map:
+		waypoints_changed.emit("Wegpunkte sind gerade nicht verfügbar.")
+		return
+	var map_key := _map_key(map)
+	var points := _waypoints.points(map_key)
+	var name := raw_name.strip_edges().left(36)
+	if name.is_empty():
+		var index := 1
+		name = Locale.text("Wegpunkt %d") % index
+		while points.has(name):
+			index += 1
+			name = Locale.text("Wegpunkt %d") % index
+	if points.size() >= 64 and not points.has(name):
+		waypoints_changed.emit("Auf dieser Karte sind bereits 64 Wegpunkte gespeichert.")
+		return
+	points[name] = player.global_position
+	waypoints_changed.emit("Wegpunkt gespeichert." if _waypoints.update(map_key, points) else "Wegpunkte konnten nicht gespeichert werden.")
+
+func remove_waypoint(id: int) -> void:
+	var map := get_node_or_null("/root/Map")
+	if not map or not available() or not _point_ids.has(id):
+		waypoints_changed.emit("Dieses Ziel ist nicht mehr verfügbar.")
+		return
+	var map_key := _map_key(map)
+	var points := _waypoints.points(map_key)
+	if not points.erase(_point_ids[id]):
+		waypoints_changed.emit("Dieses Ziel ist nicht mehr verfügbar.")
+		return
+	waypoints_changed.emit("Wegpunkt entfernt." if _waypoints.update(map_key, points) else "Wegpunkte konnten nicht gespeichert werden.")
+
+func _map_key(map: Node) -> String:
+	if &"mapName" in map:
+		var name := String(map.get(&"mapName"))
+		if not name.is_empty():
+			return name
+	return map.scene_file_path if not map.scene_file_path.is_empty() else String(map.name)
+
 func _physics_process(_delta: float) -> void:
 	set_physics_process(false)
 	var player := _player()
@@ -60,8 +119,18 @@ func _physics_process(_delta: float) -> void:
 	if not player or not map:
 		finished.emit("Teleport ist gerade nicht verfügbar.", false)
 		return
-	if _pending_id == RETURN_ID and _return_map_id == map.get_instance_id() and not _pending_cross_map:
-		_teleport(map, player, _return_point, true)
+	if _pending_id == RETURN_ID and not _pending_cross_map:
+		if _return_map_id == map.get_instance_id():
+			_teleport(map, player, _return_point, true)
+		else:
+			finished.emit("Keine letzte Position auf dieser Karte.", false)
+		return
+	if _point_ids.has(_pending_id) and not _pending_cross_map:
+		var point = _waypoints.points(_map_key(map)).get(_point_ids[_pending_id])
+		if point is Vector3:
+			_teleport(map, player, point, true)
+		else:
+			finished.emit("Dieses Ziel ist nicht mehr verfügbar.", false)
 		return
 	var entry: Dictionary = _targets.get(_pending_id, {})
 	var target: Node3D = entry.target.get_ref() if not entry.is_empty() else null
