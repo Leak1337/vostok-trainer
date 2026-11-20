@@ -16,6 +16,8 @@ const EN := {
 	"Zum Ziel": "Go to Target",
 	"Karte wechseln": "Change Map",
 	"Ziele aktualisieren": "Refresh Targets",
+	"Ziele nach Name oder Typ filtern": "Filter targets by name or type",
+	"Keine Ziele passen zur Suche.": "No targets match your search.",
 	"Wähle ein Ziel auf der aktuellen Karte.": "Select a target on the current map.",
 	"Keine Ziele auf der aktuellen Karte.": "No targets on the current map.",
 	"Letzte Position": "Last Position",

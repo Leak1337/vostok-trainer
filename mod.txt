@@ -1,7 +1,7 @@
 [mod]
 name="Vostok Trainer"
 id="vostok_trainer"
-version="1.0.0"
+version="1.1.0"
 
 [autoload]
 VostokTrainer="res://VostokTrainer/Main.gd"

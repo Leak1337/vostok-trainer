@@ -1,6 +1,6 @@
-# Vostok Trainer 1.0.0
+# Vostok Trainer 1.1.0
 
-[Download the latest VostokTrainer.vmz](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [Deutsche Anleitung](./README.de.md)
+[Download the latest VostokTrainer.vmz](https://github.com/Leak1337/vostok-trainer/releases/latest/download/VostokTrainer.vmz) · [Deutsche Anleitung](./README.de.md)
 
 An in-game trainer for single-player **Road to Vostok 0.2.3.1** using Metro Mod Loader 3.5.x.
 
@@ -11,7 +11,7 @@ Use the language selector at the top right to switch between **English** and **D
 ## Install or update
 
 1. Install [Metro Mod Loader 3.5.x](https://github.com/ametrocavich/vostok-mod-loader/releases) if needed. Put `override.cfg` and `modloader.gd` next to `RTV.exe`.
-2. [Download `VostokTrainer.vmz`](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) and put it in the `mods` folder next to `RTV.exe`. Create the folder if needed. When updating, close the game and replace the old VMZ.
+2. [Download `VostokTrainer.vmz`](https://github.com/Leak1337/vostok-trainer/releases/latest/download/VostokTrainer.vmz) and put it in the `mods` folder next to `RTV.exe`. Create the folder if needed. When updating, close the game and replace the old VMZ.
 3. Start the game, enable **Vostok Trainer** in the mod loader, load a save, and press **F6**.
 
 ## Player
@@ -70,7 +70,7 @@ With a map loaded, open **Item Spawner**. Search the catalog by name or internal
 
 ## Teleport
 
-Open **F6 → Teleport** to see active traders, map exits, and points of interest such as wells, campfires, radios, and nomad camp spots. Each target shows its distance.
+Open **F6 → Teleport** to see active traders, map exits, and points of interest such as wells, campfires, radios, and nomad camp spots. Each target shows its distance. Type part of a name or target type to filter the list, including saved waypoints.
 
 - **Go to Target** places you on clear ground near the selected target on the same map.
 - **Change Map** uses the selected exit from your current location. The game handles arrival, travel time, and its usual save rules. Locked exits still need to be unlocked in the game.

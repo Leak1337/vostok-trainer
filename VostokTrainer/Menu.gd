@@ -61,6 +61,7 @@ var _item_catalog: Array[Dictionary] = []
 var _spawn_message := "Wähle einen Gegenstand und die Anzahl der Kopien."
 var _spawn_values: Array = []
 var _travel_tab := -1
+var _travel_search: LineEdit
 var _travel_list: ItemList
 var _travel_local: Button
 var _travel_cross: Button
@@ -250,7 +251,6 @@ func _apply_language(language: String) -> void:
 	_show_profile_status(_status_message, _status_profile)
 	_show_spawn_message(_spawn_message, _spawn_values)
 	_render_travel_targets()
-	show_travel_result(_travel_message)
 	language_changed.emit()
 
 func _translate_controls(node: Node) -> void:
@@ -563,6 +563,12 @@ func _add_travel(parent: VBoxContainer) -> void:
 	hint.text = "Zum Ziel bleibt auf der Karte. Karte wechseln nutzt den normalen Übergang mit seinen Spielregeln."
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	parent.add_child(hint)
+	_travel_search = LineEdit.new()
+	_travel_search.name = "TravelSearch"
+	_travel_search.placeholder_text = "Ziele nach Name oder Typ filtern"
+	_travel_search.clear_button_enabled = true
+	_travel_search.text_changed.connect(func(_query: String) -> void: _render_travel_targets())
+	parent.add_child(_travel_search)
 	_travel_list = ItemList.new()
 	_travel_list.name = "TravelTargets"
 	_travel_list.custom_minimum_size.y = 160.0
@@ -627,6 +633,7 @@ func set_travel_targets(entries: Array[Dictionary], can_save_waypoint: bool) -> 
 
 func _render_travel_targets() -> void:
 	var selected_id: int = _selected_travel_target().get("id", 0)
+	var query := _travel_search.text.strip_edges().to_lower()
 	_travel_list.clear()
 	var selected_index := 0
 	for entry: Dictionary in _travel_entries:
@@ -636,16 +643,20 @@ func _render_travel_targets() -> void:
 		var number: int = entry.get("number", 0)
 		if number > 0:
 			title += " %d" % number
+		var kind := Locale.text(entry.kind)
+		if not query.is_empty() and not ("%s %s" % [kind, title]).to_lower().contains(query):
+			continue
 		if entry.locked:
 			title += " (%s)" % Locale.text("verschlossen")
 		var index := _travel_list.item_count
-		_travel_list.add_item("%s · %s · %d m" % [Locale.text(entry.kind), title, roundi(entry.distance)])
+		_travel_list.add_item("%s · %s · %d m" % [kind, title, roundi(entry.distance)])
 		_travel_list.set_item_metadata(index, entry)
 		if entry.id == selected_id:
 			selected_index = index
 	if _travel_list.item_count > 0:
 		_travel_list.select(selected_index)
 	_refresh_travel_buttons()
+	show_travel_result(_travel_message)
 
 func _selected_travel_target() -> Dictionary:
 	var selected := _travel_list.get_selected_items()
@@ -664,6 +675,8 @@ func _request_travel(cross_map: bool) -> void:
 
 func show_travel_result(message: String) -> void:
 	_travel_message = message
+	if message == "Wähle ein Ziel auf der aktuellen Karte." and not _travel_entries.is_empty() and _travel_list.item_count == 0:
+		message = "Keine Ziele passen zur Suche."
 	_travel_status.text = Locale.text(message)
 
 func _add_world(parent: VBoxContainer) -> void:

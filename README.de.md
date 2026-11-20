@@ -1,6 +1,6 @@
-# Vostok Trainer 1.0.0
+# Vostok Trainer 1.1.0
 
-[Neueste VostokTrainer.vmz direkt herunterladen](https://raw.githubusercontent.com/Leak1337/vostok-trainer/main/VostokTrainer.vmz) · [English documentation](./README.md)
+[Neueste VostokTrainer.vmz direkt herunterladen](https://github.com/Leak1337/vostok-trainer/releases/latest/download/VostokTrainer.vmz) · [English documentation](./README.md)
 
 Ein In-Game-Trainer für den Einzelspieler von **Road to Vostok 0.2.3.1** mit Metro Mod Loader 3.5.x.
 
@@ -64,7 +64,7 @@ In einer geladenen Karte kannst du unter **Welt** die Uhrzeit in Fünf-Minuten-S
 
 ## Teleport
 
-Öffne **F6 → Teleport**, um aktive Händler, Kartenübergänge und vorhandene Orientierungspunkte wie Brunnen, Feuerstellen, Funkgeräte oder Nomadenplätze zu sehen. Jedes Ziel zeigt seine Entfernung an.
+Öffne **F6 → Teleport**, um aktive Händler, Kartenübergänge und vorhandene Orientierungspunkte wie Brunnen, Feuerstellen, Funkgeräte oder Nomadenplätze zu sehen. Jedes Ziel zeigt seine Entfernung an. Suche nach einem Namensbestandteil oder einem Zieltyp, um die Liste zu filtern. Das gilt auch für gespeicherte Wegpunkte.
 
 - **Zum Ziel** versetzt dich auf einen freien Bodenplatz in der Nähe und bleibt auf derselben Karte.
 - **Karte wechseln** benutzt den gewählten Kartenübergang direkt. Das Spiel übernimmt Ankunft, Reisezeit und die regulären Speicherregeln. Verschlossene Übergänge müssen wie gewohnt geöffnet werden.
